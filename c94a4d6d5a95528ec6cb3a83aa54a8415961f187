@@ -1,0 +1,4 @@
+Task: Integration: Hook up CSV logging in main.go
+Summary: Added support for the 'csv' format in the logger initialization logic.
+Files: main.go
+Why: To complete the implementation of the file logging feature by supporting both JSON and CSV formats.
