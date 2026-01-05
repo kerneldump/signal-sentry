@@ -239,8 +239,8 @@ const (
 
 func printHeader() {
 	// Column Widths (Visible):
-	// Type: 6, Bands: 12, Bars: 6, RSRP: 7, SINR: 7, RSRQ: 6, RSSI: 6, CID: 7, Tower: 17, PingLoss: 25
-	fmt.Println(" TYPE  | BANDS      | BARS | RSRP  | SINR  | RSRQ | RSSI | CID   | TWR gNBID/PCIDE | PING MIN AVG MAX STD LOSS")
+	// Type: 6, Bands: 12, Bars: 6, RSRP: 7, SINR: 7, RSRQ: 6, RSSI: 6, CID: 7, Tower: 17, Stats: 24
+	fmt.Println(" TYPE  | BANDS      | BARS | RSRP  | SINR  | RSRQ | RSSI | CID   | TWR gNBID/PCIDE | MIN AVG MAX STD LOSS")
 	fmt.Println("-------+------------+------+-------+-------+------+------+-------+-----------------+-------------------------")
 }
 
@@ -263,21 +263,16 @@ func printRow(connType string, stats models.ConnectionStats, ping models.PingSta
 		typeStr = fmt.Sprintf("%s%-2s%s", ColorBlue, connType, ColorReset)
 	}
 
-	// Format each value to exactly 4 characters (e.g. 44.0 or 0.0%)
-	// Note: Loss formatted as %3.1f to be e.g. "0.0" then we append "%"
-	pMin := fmt.Sprintf("%4.1f", ping.Min)
-	pAvg := fmt.Sprintf("%4.1f", ping.Avg)
-	pMax := fmt.Sprintf("%4.1f", ping.Max)
-	pStd := fmt.Sprintf("%4.1f", ping.StdDev)
-	
-	lossVal := fmt.Sprintf("%3.1f%%", ping.Loss)
+	// Format loss string: "0.0%"
+	lossValStr := fmt.Sprintf("%.1f%%", ping.Loss)
+	lossStr := lossValStr
 	if ping.Loss > 0 {
-		lossVal = fmt.Sprintf("%s%s%s", ColorRed, lossVal, ColorReset)
+		lossStr = fmt.Sprintf("%s%s%s", ColorRed, lossValStr, ColorReset)
 	}
 
 	// Print row with aligned columns
-	// Combined Ping/Loss section starts after one space following the pipe
-	fmt.Printf("  %s   | %-10s | %s  | %s  | %s  | %-4d | %-4d | %-5d | %-15d | %s %s %s %s %s \n",
+	// Using %.1f for ping values ensures no leading padding, and we place one space between each
+	fmt.Printf("  %s   | %-10s | %s  | %s  | %s  | %-4d | %-4d | %-5d | %-15d | %.1f %.1f %.1f %.1f %s \n",
 		typeStr,
 		bands,
 		colorizeBars(stats.Bars),
@@ -287,7 +282,7 @@ func printRow(connType string, stats models.ConnectionStats, ping models.PingSta
 		stats.RSSI,
 		stats.CID,
 		towerID,
-		pMin, pAvg, pMax, pStd, lossVal,
+		ping.Min, ping.Avg, ping.Max, ping.StdDev, lossStr,
 	)
 }
 
