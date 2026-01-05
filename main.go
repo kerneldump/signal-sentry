@@ -15,13 +15,28 @@ import (
 const (
 	gatewayURL     = "http://192.168.12.1/TMI/v1/gateway?get=all"
 	headerInterval = 20
+	Version        = "v1.1.0"
 )
 
 func main() {
 	intervalPtr := flag.Int("interval", 5, "Refresh interval in seconds")
 	formatPtr := flag.String("format", "", "Output format (json or csv)")
 	outputPtr := flag.String("output", "", "Output filename (default: signal-data.json/csv)")
+	versionPtr := flag.Bool("version", false, "Show version information")
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Signal Sentry - T-Mobile Gateway Signal Monitor (%s)\n\n", Version)
+		fmt.Fprintf(os.Stderr, "Usage:\n  signal-sentry [flags]\n\n")
+		fmt.Fprintf(os.Stderr, "Flags:\n")
+		flag.PrintDefaults()
+	}
+
 	flag.Parse()
+
+	if *versionPtr {
+		fmt.Printf("Signal Sentry %s\n", Version)
+		os.Exit(0)
+	}
 
 	if err := validateInterval(*intervalPtr); err != nil {
 		fmt.Fprintln(os.Stderr, err)

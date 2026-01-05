@@ -9,6 +9,11 @@
 - **Standard Library (`encoding/json`):** Handles parsing of the gateway's JSON responses into structured data.
 - **Standard Library (`time`):** Manages the polling interval for real-time updates and timeouts.
 
+## Architecture
+- **Modular Structure:** Core gateway interaction logic is isolated in the `internal/gateway` package.
+- **Resilient Client:** The gateway client implements an automated retry mechanism with exponential backoff for transient network issues.
+- **Flexible Logging:** A pluggable logging system in `internal/logger` supports multiple output formats (JSON, CSV).
+
 ## Infrastructure & External APIs
 - **T-Mobile Gateway API:** Interacts with the local API endpoint at `http://192.168.12.1/TMI/v1/gateway?get=all`.
 

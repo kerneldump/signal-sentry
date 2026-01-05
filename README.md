@@ -33,8 +33,18 @@ Signal Sentry is a CLI tool designed to monitor and display real-time signal sta
 
 Run the tool using the compiled binary:
 ```bash
-./tmobile-stats
+./tmobile-stats [flags]
 ```
+
+### Flags
+
+- `-interval int`: Refresh interval in seconds (default: 5).
+- `-format string`: Output format for file logging (`json` or `csv`).
+- `-output string`: Output filename (default: `signal-data.json` or `signal-data.csv`).
+- `-version`: Show version information.
+- `-help`: Show help message.
+
+### Real-Time Dashboard
 
 Or run it directly using Go:
 ```bash

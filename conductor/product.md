@@ -15,6 +15,7 @@ A CLI tool designed to monitor and display real-time signal statistics from a T-
 
 ## Core Features
 - **Color-Coded Dashboard:** A live console output that uses visual cues (Green/Yellow/Red) to indicate signal health at a glance.
-- **Historical Logging:** Support for exporting collected metrics to CSV or JSON files for long-term analysis and graphing.
+- **Historical Logging:** Automated logging of signal metrics to local files in **JSON (NDJSON)** or **CSV** formats via the `-format` and `-output` flags.
 - **"Find Best Spot" Mode:** A specialized interface or mode focused on placement, providing high-visibility indicators for signal improvements.
 - **Detailed Signal Metrics:** Comprehensive display of 4G/5G bands, signal power, quality, and tower identification information.
+- **Configurable Refresh Rate:** Users can customize the data polling interval via a command-line flag (`-interval`).
