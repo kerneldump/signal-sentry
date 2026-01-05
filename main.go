@@ -1,0 +1,243 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"time"
+)
+
+const (
+	gatewayURL     = "http://192.168.12.1/TMI/v1/gateway?get=all"
+	refreshRate    = 5 * time.Second
+	headerInterval = 20
+)
+
+// Data structures matching the T-Mobile Gateway JSON
+
+type GatewayResponse struct {
+	Device DeviceInfo `json:"device"`
+	Signal SignalInfo `json:"signal"`
+	Time   TimeInfo   `json:"time"`
+}
+
+type DeviceInfo struct {
+	HardwareVersion string `json:"hardwareVersion"`
+	MacID           string `json:"macId"`
+	Manufacturer    string `json:"manufacturer"`
+	Model           string `json:"model"`
+	Role            string `json:"role"`
+	Serial          string `json:"serial"`
+	SoftwareVersion string `json:"softwareVersion"`
+}
+
+type SignalInfo struct {
+	FiveG   ConnectionStats `json:"5g"`
+	FourG   ConnectionStats `json:"4g"` // Assuming 4G structure is similar if present
+	Generic GenericInfo     `json:"generic"`
+}
+
+type ConnectionStats struct {
+	AntennaUsed string   `json:"antennaUsed"`
+	Bands       []string `json:"bands"`
+	Bars        float64  `json:"bars"`
+	CID         int      `json:"cid"`
+	GNBID       int      `json:"gNBID"` // 5G uses gNBID
+	EID         int      `json:"eid"`   // 4G often uses eid or similar, but structure usually shares fields. We'll stick to common ones.
+	PCID        int      `json:"pcid"`  // 4G Physical Cell ID
+	RSRP        int      `json:"rsrp"`
+	RSRQ        int      `json:"rsrq"`
+	RSSI        int      `json:"rssi"`
+	SINR        int      `json:"sinr"`
+}
+
+type GenericInfo struct {
+	APN          string `json:"apn"`
+	HasIPv6      bool   `json:"hasIPv6"`
+	Registration string `json:"registration"`
+}
+
+type TimeInfo struct {
+	LocalTime     int64  `json:"localTime"`
+	LocalTimeZone string `json:"localTimeZone"`
+	UpTime        int    `json:"upTime"`
+}
+
+func main() {
+	client := &http.Client{
+		Timeout: 2 * time.Second,
+	}
+
+	firstRun := true
+	linesPrinted := 0
+
+	for {
+		// 1. Fetch Data
+		data, err := fetchStats(client, gatewayURL)
+		if err != nil {
+			fmt.Printf("Error fetching stats: %v\n", err)
+			time.Sleep(refreshRate)
+			continue
+		}
+
+		// 2. Initial Setup (Device Info & Legend)
+		if firstRun {
+			printDeviceInfo(data.Device)
+			printLegend()
+			firstRun = false
+		}
+
+		// 3. Print Header periodically
+		if linesPrinted%headerInterval == 0 {
+			printHeader()
+		}
+
+		// 4. Print Data Rows
+		printRow("5G", data.Signal.FiveG)
+		// Check if we have valid 4G data (e.g., non-zero bars or bands)
+		if len(data.Signal.FourG.Bands) > 0 || data.Signal.FourG.Bars > 0 {
+			printRow("4G", data.Signal.FourG)
+			linesPrinted++ // Count extra line for 4G
+		}
+
+		linesPrinted++
+		time.Sleep(refreshRate)
+	}
+}
+
+func fetchStats(client *http.Client, url string) (*GatewayResponse, error) {
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var data GatewayResponse
+	if err := json.Unmarshal(body, &data); err != nil {
+		return nil, err
+	}
+
+	return &data, nil
+}
+
+func printDeviceInfo(d DeviceInfo) {
+	fmt.Println("====================================================================================================")
+	fmt.Printf(" DEVICE INFO | Model: %-10s | FW: %-10s | Serial: %-15s | MAC: %s\n",
+		d.Model, d.SoftwareVersion, d.Serial, d.MacID)
+	fmt.Println("====================================================================================================")
+}
+
+func printLegend() {
+	fmt.Print(`
+SIGNAL METRICS GUIDE:
+---------------------
+* BAND:  The frequency band in use (e.g., n41 is faster mid-band, n71 is longer range).
+* RSRP:  (Reference Signal Received Power) Your main signal strength.
+         Excellent > -80 | Good -80 to -90 | Fair -90 to -100 | Poor < -100.
+* SINR:  (Signal-to-Interference-plus-Noise Ratio) Your signal quality (cleanliness).
+         Higher is better. > 20 is excellent. < 0 means high noise/interference.
+* BARS:  General signal rating (1-5).
+
+* CID & gNBID: 
+         These are very important if you are aiming antennas. They tell you which tower and which
+         sector of the tower you are talking to. If your signal drops, seeing these numbers change 
+         tells you if you switched towers.
+
+* RSRQ & RSSI:
+         * RSRQ: Helpful. If SINR is good but RSRQ is bad, the tower is likely congested.
+         * RSSI: Less critical for 5G (RSRP is better), but harmless to include.
+`)
+}
+
+// ANSI Color Codes
+const (
+	ColorReset  = "\033[0m"
+	ColorRed    = "\033[31m"
+	ColorGreen  = "\033[32m"
+	ColorYellow = "\033[33m"
+	ColorBlue   = "\033[34m"
+	ColorCyan   = "\033[36m"
+	ColorWhite  = "\033[37m"
+)
+
+func colorizeRSRP(val int) string {
+	if val > -80 {
+		return fmt.Sprintf("%s%d%s", ColorGreen, val, ColorReset)
+	} else if val >= -100 {
+		return fmt.Sprintf("%s%d%s", ColorYellow, val, ColorReset)
+	}
+	return fmt.Sprintf("%s%d%s", ColorRed, val, ColorReset)
+}
+
+func colorizeSINR(val int) string {
+	if val > 20 {
+		return fmt.Sprintf("%s%d%s", ColorGreen, val, ColorReset)
+	} else if val >= 0 {
+		return fmt.Sprintf("%s%d%s", ColorYellow, val, ColorReset)
+	}
+	return fmt.Sprintf("%s%d%s", ColorRed, val, ColorReset)
+}
+
+func colorizeBars(val float64) string {
+	if val >= 4.0 {
+		return fmt.Sprintf("%s%.1f%s", ColorGreen, val, ColorReset)
+	} else if val >= 2.0 {
+		return fmt.Sprintf("%s%.1f%s", ColorYellow, val, ColorReset)
+	}
+	return fmt.Sprintf("%s%.1f%s", ColorRed, val, ColorReset)
+}
+
+func printHeader() {
+	fmt.Println(" TYPE | BANDS      | BARS | RSRP | SINR | RSRQ | RSSI | CID   | TOWER (gNBID/PCID)")
+	fmt.Println("------+------------+------+------+------+------+------+-------+-------------------")
+}
+
+func printRow(connType string, stats ConnectionStats) {
+	bands := strings.Join(stats.Bands, ",")
+	if bands == "" {
+		bands = "---"
+	}
+
+	// T-Mobile 5G gateways often return large integers for ID.
+	// For 4G, 'PCID' is often the cell ID.
+	// We'll prioritize gNBID if non-zero, else PCID, else CID.
+	towerID := stats.GNBID
+	if towerID == 0 {
+		towerID = stats.PCID
+	}
+	// Note: Sometimes the raw CID is what users look at for cell identity too.
+
+	// Colorize Connection Type
+	typeStr := connType
+	if connType == "5G" {
+		typeStr = fmt.Sprintf("%s%s%s", ColorCyan, connType, ColorReset)
+	} else if connType == "4G" {
+		typeStr = fmt.Sprintf("%s%s%s", ColorBlue, connType, ColorReset)
+	}
+
+	// Adjusted Printf to handle color strings directly (padding won't work perfectly on the string including codes)
+	// We will format the NUMBER first, then wrap color.
+
+	fmt.Printf(" %-13s | %-10s | %-13s | %-13s | %-13s | %-4d | %-4d | %-5d | %d\n",
+		typeStr,
+		bands,
+		colorizeBars(stats.Bars),
+		colorizeRSRP(stats.RSRP),
+		colorizeSINR(stats.SINR),
+		stats.RSRQ,
+		stats.RSSI,
+		stats.CID,
+		towerID,
+	)
+}

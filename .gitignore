@@ -1,0 +1,20 @@
+# Binaries
+tmobile-stats
+*.exe
+*.dll
+*.so
+*.dylib
+
+# OS Specifics
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test artifacts
+*.out
+coverage.txt
