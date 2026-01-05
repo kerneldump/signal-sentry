@@ -1,0 +1,4 @@
+Task: Write failing tests for -interval flag validation
+Summary: Added config_test.go with TestValidateInterval to check boundary conditions (0, -1, positive numbers).
+Files: config_test.go
+Why: To ensure the interval flag input is properly validated before being used by the application.
