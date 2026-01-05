@@ -1,0 +1,4 @@
+Task: Implement flag parsing and validation in main.go
+Summary: Added flag.Int for 'interval', called flag.Parse(), and used validateInterval to enforce valid input. Added config.go with the validation logic.
+Files: main.go, config.go
+Why: To enable user configuration of the refresh rate via the CLI.
