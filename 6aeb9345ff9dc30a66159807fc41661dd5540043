@@ -1,0 +1,4 @@
+Task: Update main.go to use the new internal/gateway package
+Summary: Refactored main.go and main_test.go to import and use the internal/gateway package for data models and API interaction. Removed local struct definitions and fetchStats function.
+Files: main.go, main_test.go
+Why: To finalize the migration of gateway interaction logic into a dedicated package and ensure the application correctly integrates with the new structure.
