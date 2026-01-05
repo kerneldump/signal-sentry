@@ -11,8 +11,8 @@
 - [x] Task: Integration: Hook up JSON logging in `main.go` [27a019e]
 - [x] Task: Conductor - User Manual Verification 'Phase 2: JSON Implementation' (Protocol in workflow.md) [fd470e7]
 
-## Phase 3: CSV Implementation
+## Phase 3: CSV Implementation [checkpoint: 5dc550b]
 - [x] Task: Implement `CSVLogger` in `internal/logger` (handling headers and row mapping) [32557eb]
 - [x] Task: Write tests for CSV logging [32557eb]
 - [x] Task: Integration: Hook up CSV logging in `main.go` [c94a4d6]
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: CSV Implementation' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: CSV Implementation' (Protocol in workflow.md) [5dc550b]
