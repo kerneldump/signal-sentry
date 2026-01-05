@@ -1,0 +1,4 @@
+Task: Implement JSONLogger in internal/logger
+Summary: Implemented the JSONLogger struct and NewJSONLogger constructor. It appends NDJSON formatted lines to a file. Added unit tests to verify file creation and content.
+Files: internal/logger/json.go, internal/logger/json_test.go
+Why: To provide JSON logging capability as part of the file logging feature.
