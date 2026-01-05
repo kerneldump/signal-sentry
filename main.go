@@ -1,8 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -16,6 +18,14 @@ const (
 )
 
 func main() {
+	intervalPtr := flag.Int("interval", 5, "Refresh interval in seconds")
+	flag.Parse()
+
+	if err := validateInterval(*intervalPtr); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
 	client := &http.Client{
 		Timeout: 2 * time.Second,
 	}
