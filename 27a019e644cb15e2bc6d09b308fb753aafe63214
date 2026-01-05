@@ -1,0 +1,4 @@
+Task: Integration: Hook up JSON logging in main.go
+Summary: Initialized JSONLogger if -format=json is specified. Wrapped the logging call in the main loop. Added defer Close() for the logger.
+Files: main.go
+Why: To enable real-world usage of the JSON logging feature.
