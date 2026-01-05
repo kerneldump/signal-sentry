@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"tmobile-stats/internal/gateway"
+	"tmobile-stats/internal/logger"
 )
 
 const (
@@ -44,8 +45,17 @@ func main() {
 		} else {
 			outputFilename = *outputPtr
 		}
-		// Placeholders for usage later
-		_ = outputFilename
+	}
+
+	var appLogger logger.Logger
+	if *formatPtr == "json" {
+		var err error
+		appLogger, err = logger.NewJSONLogger(outputFilename)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
+			os.Exit(1)
+		}
+		defer appLogger.Close()
 	}
 
 	refreshDuration := time.Duration(*intervalPtr) * time.Second
@@ -66,7 +76,14 @@ func main() {
 			continue
 		}
 
-		// 2. Initial Setup (Device Info & Legend)
+		// 2. Log Data if enabled
+		if appLogger != nil {
+			if err := appLogger.Log(data); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to log data: %v\n", err)
+			}
+		}
+
+		// 3. Initial Setup (Device Info & Legend)
 		if firstRun {
 			printDeviceInfo(data.Device)
 			printLegend()
