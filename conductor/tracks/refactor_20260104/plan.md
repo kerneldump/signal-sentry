@@ -12,6 +12,6 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Logic Migration and Refactoring' (Protocol in workflow.md) [fbd4425]
 
 ## Phase 3: Integration and Cleanup
-- [ ] Task: Update `main.go` to use the new `internal/gateway` package
+- [x] Task: Update `main.go` to use the new `internal/gateway` package [6aeb934]
 - [ ] Task: Verify overall application functionality and test coverage
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Integration and Cleanup' (Protocol in workflow.md)
