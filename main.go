@@ -1,12 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"tmobile-stats/internal/gateway"
 )
 
 const (
@@ -14,56 +14,6 @@ const (
 	refreshRate    = 5 * time.Second
 	headerInterval = 20
 )
-
-// Data structures matching the T-Mobile Gateway JSON
-
-type GatewayResponse struct {
-	Device DeviceInfo `json:"device"`
-	Signal SignalInfo `json:"signal"`
-	Time   TimeInfo   `json:"time"`
-}
-
-type DeviceInfo struct {
-	HardwareVersion string `json:"hardwareVersion"`
-	MacID           string `json:"macId"`
-	Manufacturer    string `json:"manufacturer"`
-	Model           string `json:"model"`
-	Role            string `json:"role"`
-	Serial          string `json:"serial"`
-	SoftwareVersion string `json:"softwareVersion"`
-}
-
-type SignalInfo struct {
-	FiveG   ConnectionStats `json:"5g"`
-	FourG   ConnectionStats `json:"4g"` // Assuming 4G structure is similar if present
-	Generic GenericInfo     `json:"generic"`
-}
-
-type ConnectionStats struct {
-	AntennaUsed string   `json:"antennaUsed"`
-	Bands       []string `json:"bands"`
-	Bars        float64  `json:"bars"`
-	CID         int      `json:"cid"`
-	GNBID       int      `json:"gNBID"` // 5G uses gNBID
-	EID         int      `json:"eid"`   // 4G often uses eid or similar, but structure usually shares fields. We'll stick to common ones.
-	PCID        int      `json:"pcid"`  // 4G Physical Cell ID
-	RSRP        int      `json:"rsrp"`
-	RSRQ        int      `json:"rsrq"`
-	RSSI        int      `json:"rssi"`
-	SINR        int      `json:"sinr"`
-}
-
-type GenericInfo struct {
-	APN          string `json:"apn"`
-	HasIPv6      bool   `json:"hasIPv6"`
-	Registration string `json:"registration"`
-}
-
-type TimeInfo struct {
-	LocalTime     int64  `json:"localTime"`
-	LocalTimeZone string `json:"localTimeZone"`
-	UpTime        int    `json:"upTime"`
-}
 
 func main() {
 	client := &http.Client{
@@ -75,7 +25,7 @@ func main() {
 
 	for {
 		// 1. Fetch Data
-		data, err := fetchStats(client, gatewayURL)
+		data, err := gateway.FetchStats(client, gatewayURL)
 		if err != nil {
 			fmt.Printf("Error fetching stats: %v\n", err)
 			time.Sleep(refreshRate)
@@ -107,31 +57,7 @@ func main() {
 	}
 }
 
-func fetchStats(client *http.Client, url string) (*GatewayResponse, error) {
-	resp, err := client.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status code: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var data GatewayResponse
-	if err := json.Unmarshal(body, &data); err != nil {
-		return nil, err
-	}
-
-	return &data, nil
-}
-
-func printDeviceInfo(d DeviceInfo) {
+func printDeviceInfo(d gateway.DeviceInfo) {
 	fmt.Println("====================================================================================================")
 	fmt.Printf(" DEVICE INFO | Model: %-10s | FW: %-10s | Serial: %-15s | MAC: %s\n",
 		d.Model, d.SoftwareVersion, d.Serial, d.MacID)
@@ -203,7 +129,7 @@ func printHeader() {
 	fmt.Println("------+------------+------+------+------+------+------+-------+-------------------")
 }
 
-func printRow(connType string, stats ConnectionStats) {
+func printRow(connType string, stats gateway.ConnectionStats) {
 	bands := strings.Join(stats.Bands, ",")
 	if bands == "" {
 		bands = "---"

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"tmobile-stats/internal/gateway"
 )
 
 // TestColorizeRSRP tests the threshold logic for RSRP colors
@@ -112,8 +114,8 @@ func TestFetchStats(t *testing.T) {
 	// Create Client
 	client := &http.Client{Timeout: 2 * time.Second}
 
-	// Call fetchStats using the mock server URL
-	data, err := fetchStats(client, server.URL)
+	// Call gateway.FetchStats using the mock server URL
+	data, err := gateway.FetchStats(client, server.URL)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
