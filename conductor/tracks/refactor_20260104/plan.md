@@ -6,8 +6,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Package Scaffolding and Struct Migration' (Protocol in workflow.md) [d9a6812]
 
 ## Phase 2: Logic Migration and Refactoring
-- [ ] Task: Write failing tests for `gateway.FetchStats` (TDD)
-- [ ] Task: Move and refactor `fetchStats` from `main.go` to `internal/gateway/client.go`
+- [x] Task: Write failing tests for `gateway.FetchStats` (TDD) [30798f8]
+- [~] Task: Move and refactor `fetchStats` from `main.go` to `internal/gateway/client.go`
 - [ ] Task: Implement retry logic in `gateway.FetchStats`
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Logic Migration and Refactoring' (Protocol in workflow.md)
 
