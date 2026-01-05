@@ -1,0 +1,4 @@
+Task: Write failing tests for gateway.FetchStats
+Summary: Added client_test.go with TestFetchStats and TestFetchStats_Retry.
+Files: internal/gateway/client_test.go
+Why: To define the expected behavior for the refactored gateway client, including success and retry cases (TDD Red Phase).
