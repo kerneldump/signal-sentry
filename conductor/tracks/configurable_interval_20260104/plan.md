@@ -1,8 +1,8 @@
 # Track Plan: Add configurable refresh interval via command-line flag
 
 ## Phase 1: CLI Flag Implementation
-- [ ] Task: Write failing tests for `-interval` flag validation (e.g., negative/zero values)
-- [ ] Task: Implement flag parsing and validation in `main.go`
+- [x] Task: Write failing tests for `-interval` flag validation (e.g., negative/zero values) [4af5792]
+- [~] Task: Implement flag parsing and validation in `main.go`
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: CLI Flag Implementation' (Protocol in workflow.md)
 
 ## Phase 2: Integration with Polling Loop
