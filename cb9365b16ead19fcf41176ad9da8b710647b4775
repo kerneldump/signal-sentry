@@ -1,0 +1,4 @@
+Task: Update main.go to support -format and -output flags
+Summary: Added flag definitions for format and output. Implemented validation logic in config.go and verified it with tests.
+Files: main.go, config.go, config_test.go
+Why: To prepare the application for file logging capabilities.
