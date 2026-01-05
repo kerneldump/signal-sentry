@@ -48,9 +48,13 @@ func main() {
 	}
 
 	var appLogger logger.Logger
-	if *formatPtr == "json" {
+	if *formatPtr != "" {
 		var err error
-		appLogger, err = logger.NewJSONLogger(outputFilename)
+		if *formatPtr == "json" {
+			appLogger, err = logger.NewJSONLogger(outputFilename)
+		} else if *formatPtr == "csv" {
+			appLogger, err = logger.NewCSVLogger(outputFilename)
+		}
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
 			os.Exit(1)
