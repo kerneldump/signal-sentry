@@ -14,5 +14,5 @@
 ## Phase 3: CSV Implementation
 - [x] Task: Implement `CSVLogger` in `internal/logger` (handling headers and row mapping) [32557eb]
 - [x] Task: Write tests for CSV logging [32557eb]
-- [~] Task: Integration: Hook up CSV logging in `main.go`
+- [x] Task: Integration: Hook up CSV logging in `main.go` [c94a4d6]
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: CSV Implementation' (Protocol in workflow.md)
