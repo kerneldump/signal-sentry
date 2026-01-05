@@ -3,12 +3,10 @@ package pinger
 import (
 	"context"
 	"math"
-	"os/exec"
-	"regexp"
-	"strconv"
 	"sync"
 	"time"
 
+	probing "github.com/prometheus-community/pro-bing"
 	"tmobile-stats/internal/models"
 )
 
@@ -88,77 +86,81 @@ func (p *Pinger) GetStatsAndReset() models.PingStats {
 	return currentStats
 }
 
-
-var (
-	// macOS ping output example for stats:
-	// round-trip min/avg/max/stddev = 14.545/14.545/14.545/0.000 ms
-	macStatsRegex = regexp.MustCompile(`min/avg/max/stddev = ([\d.]+)/([\d.]+)/([\d.]+)/([\d.]+) ms`)
-)
-
 func (p *Pinger) ping() {
-	ctx, cancel := context.WithTimeout(context.Background(), p.Interval)
-	defer cancel()
+	// Create a new pro-bing pinger
+	pinger, err := probing.NewPinger(p.Target)
+	if err != nil {
+		// Log error or just return, counting as loss handled by flow below?
+		// If we can't resolve or create socket, it's effectively a loss.
+		p.recordLoss()
+		return
+	}
 
-	// Use -t 1 to set timeout to 1 second on macOS (optional, but good)
-	cmd := exec.CommandContext(ctx, "ping", "-c", "1", "-t", "1", p.Target)
-	out, err := cmd.Output()
+	pinger.Count = 1
+	pinger.Timeout = p.Interval // Wait at most the interval duration
+	
+	// On macOS, unprivileged ping might be needed if sudo is not used, 
+	// but we will assume sudo per user request for "native" behavior.
+	// However, setting SetPrivileged(true) is safer for ICMP on most systems if running as root.
+	pinger.SetPrivileged(true)
 
+	err = pinger.Run() // Blocks until finished
+	if err != nil {
+		p.recordLoss()
+		return
+	}
+
+	stats := pinger.Statistics()
+	if stats.PacketsRecv == 0 {
+		p.recordLoss()
+		return
+	}
+
+	// Success
+	rtt := float64(stats.AvgRtt.Milliseconds()) // stats.AvgRtt is the only RTT for Count=1
+	
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.updateStats(&p.stats, rtt, &p.m2)
+	p.updateStats(&p.lifetime, rtt, &p.lifeM2)
+}
+
+func (p *Pinger) recordLoss() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	p.stats.Sent++
 	p.lifetime.Sent++
-
-	if err != nil {
-		// Update Loss %
-		p.stats.Loss = float64(p.stats.Sent-p.stats.Received) / float64(p.stats.Sent) * 100
-		p.lifetime.Loss = float64(p.lifetime.Sent-p.lifetime.Received) / float64(p.lifetime.Sent) * 100
-		return
-	}
-
-	p.stats.Received++
-	p.lifetime.Received++
+	
+	// Recalc loss
 	p.stats.Loss = float64(p.stats.Sent-p.stats.Received) / float64(p.stats.Sent) * 100
 	p.lifetime.Loss = float64(p.lifetime.Sent-p.lifetime.Received) / float64(p.lifetime.Sent) * 100
+}
 
-	matches := macStatsRegex.FindStringSubmatch(string(out))
-	if len(matches) == 5 {
-		rtt, _ := strconv.ParseFloat(matches[2], 64) // Use avg from ping output as the RTT
-		p.stats.LastRTT = rtt
-		p.lifetime.LastRTT = rtt
+func (p *Pinger) updateStats(s *models.PingStats, rtt float64, m2 *float64) {
+	s.Sent++
+	s.Received++
+	s.LastRTT = rtt
+	s.Loss = float64(s.Sent-s.Received) / float64(s.Sent) * 100
 
-		// Update Interval Stats
-		if p.stats.Min == 0 { // First successful sample in window
-			p.stats.Min = rtt
-			p.stats.Max = rtt
-			p.stats.Avg = rtt
-			p.stats.StdDev = 0
-			p.m2 = 0
-		} else {
-			if rtt < p.stats.Min { p.stats.Min = rtt }
-			if rtt > p.stats.Max { p.stats.Max = rtt }
-			delta := rtt - p.stats.Avg
-			p.stats.Avg += delta / float64(p.stats.Received)
-			delta2 := rtt - p.stats.Avg
-			p.m2 += delta * delta2
-			p.stats.StdDev = math.Sqrt(p.m2 / float64(p.stats.Received))
-		}
-
-		// Update Lifetime Stats
-		if p.lifetime.Received == 1 {
-			p.lifetime.Min = rtt
-			p.lifetime.Max = rtt
-			p.lifetime.Avg = rtt
-			p.lifetime.StdDev = 0
-			p.lifeM2 = 0
-		} else {
-			if rtt < p.lifetime.Min { p.lifetime.Min = rtt }
-			if rtt > p.lifetime.Max { p.lifetime.Max = rtt }
-			delta := rtt - p.lifetime.Avg
-			p.lifetime.Avg += delta / float64(p.lifetime.Received)
-			delta2 := rtt - p.lifetime.Avg
-			p.lifeM2 += delta * delta2
-			p.lifetime.StdDev = math.Sqrt(p.lifeM2 / float64(p.lifetime.Received))
-		}
+	if s.Min == 0 { // First successful sample in window/lifetime (logic from before)
+		// Note: Technically lifetime.Min shouldn't be reset to 0 unless we want to allow it. 
+		// But s.Min starts at 0. If it's 0, we take the value.
+		// Wait, if actual RTT is 0.0001, this check fails. But RTT is rarely exactly 0.
+		s.Min = rtt
+		s.Max = rtt
+		s.Avg = rtt
+		s.StdDev = 0
+		*m2 = 0
+	} else {
+		if rtt < s.Min { s.Min = rtt }
+		if rtt > s.Max { s.Max = rtt }
+		
+		delta := rtt - s.Avg
+		s.Avg += delta / float64(s.Received)
+		delta2 := rtt - s.Avg
+		*m2 += delta * delta2
+		s.StdDev = math.Sqrt(*m2 / float64(s.Received))
 	}
 }

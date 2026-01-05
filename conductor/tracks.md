@@ -28,3 +28,33 @@ This file tracks all major tracks for the project. Each track has its own detail
 ## [x] Track: Historical Analysis Tool
 
 *Link: [./conductor/tracks/historical_analysis_20260105/](./conductor/tracks/historical_analysis_20260105/)*
+
+
+
+## [x] Track: TUI Help Overlay
+
+
+
+*Link: [./conductor/tracks/tui_help_overlay_20260105/](./conductor/tracks/tui_help_overlay_20260105/)*
+
+
+
+
+
+
+
+
+
+
+
+## [x] Track: Native Ping Implementation
+
+
+
+*Link: [./conductor/tracks/native_ping_20260105/](./conductor/tracks/native_ping_20260105/)*
+
+
+
+
+
+

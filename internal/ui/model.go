@@ -34,6 +34,7 @@ type Model struct {
 	interval     time.Duration
 	width        int
 	height       int
+	showHelp     bool
 	err          error
 }
 
@@ -61,6 +62,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
+		case "i":
+			m.showHelp = !m.showHelp
 		case "+", "=":
 			m.interval += time.Second
 			if m.interval > 60*time.Second {
@@ -139,6 +142,29 @@ var (
 	errorStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 )
 
+const helpText = `SIGNAL METRICS GUIDE:
+---------------------
+* BAND:  The frequency band in use.
+         n41: High speed, shorter range (Ultra Capacity).
+         n25: Balanced speed and range.
+         n71: Long range, slower speeds.
+
+* RSRP:  (Reference Signal Received Power) Your main signal strength.
+         Excellent > -80  | Good -80 to -95
+         Fair -95 to -110 | Poor < -110 (Risk of drops).
+
+* SINR:  (Signal-to-Interference-plus-Noise Ratio) Signal quality.
+         Higher is better. > 20 is excellent.
+         < 0 means high noise (your speed will suffer).
+
+* RSRQ:  (Reference Signal Received Quality) The congestion indicator.
+         If SINR is Good (high) but RSRQ is Bad (low), the tower is
+         likely congested with heavy traffic.
+
+* CID & gNBID:
+         gNBID identifies the physical TOWER.
+         CID identifies the SECTOR (which side of the tower you are facing).`
+
 func (m *Model) View() string {
 	if m.width == 0 {
 		return "Initializing..."
@@ -166,43 +192,47 @@ func (m *Model) View() string {
 	s.WriteString(fmt.Sprintf("round-trip min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n", 
 		lp.Min, lp.Avg, lp.Max, lp.StdDev))
 
-	s.WriteString(fmt.Sprintf("Interval: %v (Press +/- to adjust, q to quit)\n\n", m.interval))
+	s.WriteString(fmt.Sprintf("Interval: %v (Press +/- to adjust, i for info, q to quit)\n\n", m.interval))
 
 	if m.err != nil {
 		s.WriteString(errorStyle.Render(fmt.Sprintf("Error: %v", m.err)) + "\n\n")
 	}
 
-	// 4. Header
-	s.WriteString(headerStyle.Render(" TYPE  | BANDS      | BARS | RSRP  | SINR  | RSRQ | RSSI | CID   | TWR gNBID/PCIDE | MIN AVG MAX STD LOSS") + "\n")
-	s.WriteString("-------+------------+------+-------+-------+------+------+-------+-----------------+-------------------------\n")
+	if m.showHelp {
+		s.WriteString(helpText + "\n")
+	} else {
+		// 3. Header
+		s.WriteString(headerStyle.Render(" TYPE  | BANDS      | BARS | RSRP  | SINR  | RSRQ | RSSI | CID   | TWR gNBID/PCIDE | MIN AVG MAX STD LOSS") + "\n")
+		s.WriteString("-------+------------+------+-------+-------+------+------+-------+-----------------+-------------------------\n")
 
-	// 5. Buffer
-	// guideLines: Device(1), Metrics(1), PingStats(2), Interval(1), Empty(1), Header(1), Separator(1) = 8
-	guideLines := 9 // Adjusted for 2 extra ping lines + safety
-	linesUsed := 0
-	maxLines := m.height - guideLines
-	if maxLines < 0 {
-		maxLines = 0
-	}
-
-	for _, data := range m.buffer {
-		// 5G row
-		row5g := m.renderRow("5G", data.Gateway.Signal.FiveG, data.Ping)
-		if linesUsed < maxLines {
-			s.WriteString(row5g)
-			linesUsed++
-		} else {
-			break
+		// 4. Buffer
+		// guideLines: Device(1), Metrics(1), PingStats(2), Interval(1), Empty(1), Header(1), Separator(1) = 8
+		guideLines := 9 // Adjusted for 2 extra ping lines + safety
+		linesUsed := 0
+		maxLines := m.height - guideLines
+		if maxLines < 0 {
+			maxLines = 0
 		}
 
-		// 4G row
-		if len(data.Gateway.Signal.FourG.Bands) > 0 || data.Gateway.Signal.FourG.Bars > 0 {
-			row4g := m.renderRow("4G", data.Gateway.Signal.FourG, data.Ping)
+		for _, data := range m.buffer {
+			// 5G row
+			row5g := m.renderRow("5G", data.Gateway.Signal.FiveG, data.Ping)
 			if linesUsed < maxLines {
-				s.WriteString(row4g)
+				s.WriteString(row5g)
 				linesUsed++
 			} else {
 				break
+			}
+
+			// 4G row
+			if len(data.Gateway.Signal.FourG.Bands) > 0 || data.Gateway.Signal.FourG.Bars > 0 {
+				row4g := m.renderRow("4G", data.Gateway.Signal.FourG, data.Ping)
+				if linesUsed < maxLines {
+					s.WriteString(row4g)
+					linesUsed++
+				} else {
+					break
+				}
 			}
 		}
 	}

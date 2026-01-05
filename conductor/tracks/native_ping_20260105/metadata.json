@@ -1,0 +1,7 @@
+{
+  "id": "native_ping_20260105",
+  "name": "Native Ping Implementation",
+  "description": "Switch from shell execution to pro-bing library for ICMP pings.",
+  "status": "todo",
+  "created_at": "2026-01-05"
+}

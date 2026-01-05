@@ -26,7 +26,7 @@ const (
 
 func main() {
 	// 1. Initial Flags for Config Loading
-	configPath := flag.String("config", "", "Path to config file (JSON)")
+	configPath := flag.String("config", "config.json", "Path to config file (JSON)")
 	
 	// Temporarily define other flags to avoid parsing errors
 	intervalFlag := flag.Int("interval", 0, "Refresh interval in seconds")
