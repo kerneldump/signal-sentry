@@ -1,0 +1,4 @@
+Task: Refactor main.go to use the variable interval instead of the refreshRate constant
+Summary: Updated the main loop to sleep for 'time.Duration(*intervalPtr) * time.Second'. Removed the hardcoded refreshRate constant.
+Files: main.go
+Why: To finalize the implementation of the configurable refresh rate feature.
