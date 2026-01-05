@@ -11,7 +11,7 @@
 - [x] Task: Implement retry logic in `gateway.FetchStats` [cdd8593]
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Logic Migration and Refactoring' (Protocol in workflow.md) [fbd4425]
 
-## Phase 3: Integration and Cleanup
+## Phase 3: Integration and Cleanup [checkpoint: 900c56c]
 - [x] Task: Update `main.go` to use the new `internal/gateway` package [6aeb934]
-- [ ] Task: Verify overall application functionality and test coverage
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Integration and Cleanup' (Protocol in workflow.md)
+- [x] Task: Verify overall application functionality and test coverage [e66085f]
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Integration and Cleanup' (Protocol in workflow.md) [900c56c]
