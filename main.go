@@ -13,7 +13,6 @@ import (
 
 const (
 	gatewayURL     = "http://192.168.12.1/TMI/v1/gateway?get=all"
-	refreshRate    = 5 * time.Second
 	headerInterval = 20
 )
 
@@ -25,6 +24,8 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+
+	refreshDuration := time.Duration(*intervalPtr) * time.Second
 
 	client := &http.Client{
 		Timeout: 2 * time.Second,
@@ -38,7 +39,7 @@ func main() {
 		data, err := gateway.FetchStats(client, gatewayURL)
 		if err != nil {
 			fmt.Printf("Error fetching stats: %v\n", err)
-			time.Sleep(refreshRate)
+			time.Sleep(refreshDuration)
 			continue
 		}
 
@@ -63,7 +64,7 @@ func main() {
 		}
 
 		linesPrinted++
-		time.Sleep(refreshRate)
+		time.Sleep(refreshDuration)
 	}
 }
 
