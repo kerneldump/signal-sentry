@@ -41,6 +41,33 @@ Or run it directly using Go:
 make run
 ```
 
+## Dashboard Preview
+
+The tool provides a live, color-coded dashboard (colors not shown in this text preview) to help you hunt for the best signal.
+
+```text
+====================================================================================================
+ DEVICE INFO | Model: TMO-G5AR   | FW: 1.00.02    | Serial: XXXXXXXXXXX     | MAC: XX:XX:XX:XX:XX:XX
+====================================================================================================
+
+SIGNAL METRICS GUIDE:
+---------------------
+* BAND:  The frequency band in use (e.g., n41 is faster mid-band, n71 is longer range).
+* RSRP:  (Reference Signal Received Power) Your main signal strength.
+         Excellent > -80 | Good -80 to -90 | Fair -90 to -100 | Poor < -100.
+* SINR:  (Signal-to-Interference-plus-Noise Ratio) Your signal quality (cleanliness).
+         Higher is better. > 20 is excellent. < 0 means high noise/interference.
+* BARS:  General signal rating (1-5).
+
+ TYPE | BANDS      | BARS | RSRP | SINR | RSRQ | RSSI | CID   | TOWER (gNBID/PCID)
+------+------------+------+------+------+------+------+-------+-------------------
+ 5G   | n41        | 2.0  | -106 | -1   | -14  | -91  | 302   | 1870191  <-- Weak signal in corner
+ 5G   | n41        | 2.5  | -102 | 2    | -13  | -90  | 302   | 1870191  <-- Moving towards window...
+ 5G   | n41        | 3.0  | -95  | 8    | -12  | -88  | 302   | 1870191
+ 5G   | n41        | 4.0  | -88  | 15   | -11  | -85  | 302   | 1870191  <-- Getting better
+ 5G   | n41        | 5.0  | -79  | 25   | -10  | -82  | 302   | 1870191  <-- Excellent placement found!
+```
+
 ### Signal Metrics Guide
 
 - **BAND:** The frequency band in use (e.g., n41, n71).
