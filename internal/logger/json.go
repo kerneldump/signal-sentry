@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"tmobile-stats/internal/gateway"
+	"tmobile-stats/internal/models"
 )
 
 type JSONLogger struct {
@@ -19,7 +19,7 @@ func NewJSONLogger(filename string) (*JSONLogger, error) {
 	return &JSONLogger{file: f}, nil
 }
 
-func (l *JSONLogger) Log(data *gateway.GatewayResponse) error {
+func (l *JSONLogger) Log(data *models.CombinedStats) error {
 	bytes, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("could not marshal JSON: %w", err)
@@ -32,6 +32,7 @@ func (l *JSONLogger) Log(data *gateway.GatewayResponse) error {
 
 	return nil
 }
+
 
 func (l *JSONLogger) Close() error {
 	return l.file.Close()

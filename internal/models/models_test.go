@@ -1,4 +1,4 @@
-package gateway
+package models
 
 import (
 	"encoding/json"
@@ -30,6 +30,7 @@ func TestGatewayResponse_Unmarshal(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to unmarshal JSON: %v", err)
 	}
+
 
 	if data.Device.Model != "TMO-G5AR" {
 		t.Errorf("Expected model 'TMO-G5AR', got '%s'", data.Device.Model)

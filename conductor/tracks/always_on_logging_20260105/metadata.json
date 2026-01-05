@@ -1,0 +1,7 @@
+{
+  "id": "always_on_logging_20260105",
+  "name": "Always-on JSON Logging",
+  "description": "Automatically append all stats to stats.log in JSON format.",
+  "status": "completed",
+  "created_at": "2026-01-05"
+}

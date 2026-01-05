@@ -3,7 +3,7 @@ package logger
 import (
 	"os"
 	"testing"
-	"tmobile-stats/internal/gateway"
+	"tmobile-stats/internal/models"
 )
 
 func TestJSONLogger(t *testing.T) {
@@ -15,14 +15,17 @@ func TestJSONLogger(t *testing.T) {
 		t.Fatalf("Failed to create JSONLogger: %v", err)
 	}
 
-	data := &gateway.GatewayResponse{
-		Device: gateway.DeviceInfo{Model: "TEST"},
+	data := &models.CombinedStats{
+		Gateway: models.GatewayResponse{
+			Device: models.DeviceInfo{Model: "TEST"},
+		},
 	}
 
 	err = l.Log(data)
 	if err != nil {
 		t.Fatalf("Log failed: %v", err)
 	}
+
 
 	l.Close()
 

@@ -1,7 +1,6 @@
-package gateway
+package models
 
-// Data structures matching the T-Mobile Gateway JSON
-
+// GatewayResponse data structures matching the T-Mobile Gateway JSON
 type GatewayResponse struct {
 	Device DeviceInfo `json:"device"`
 	Signal SignalInfo `json:"signal"`
@@ -20,7 +19,7 @@ type DeviceInfo struct {
 
 type SignalInfo struct {
 	FiveG   ConnectionStats `json:"5g"`
-	FourG   ConnectionStats `json:"4g"` // Assuming 4G structure is similar if present
+	FourG   ConnectionStats `json:"4g"`
 	Generic GenericInfo     `json:"generic"`
 }
 
@@ -29,9 +28,9 @@ type ConnectionStats struct {
 	Bands       []string `json:"bands"`
 	Bars        float64  `json:"bars"`
 	CID         int      `json:"cid"`
-	GNBID       int      `json:"gNBID"` // 5G uses gNBID
-	EID         int      `json:"eid"`   // 4G often uses eid or similar, but structure usually shares fields. We'll stick to common ones.
-	PCID        int      `json:"pcid"`  // 4G Physical Cell ID
+	GNBID       int      `json:"gNBID"`
+	EID         int      `json:"eid"`
+	PCID        int      `json:"pcid"`
 	RSRP        int      `json:"rsrp"`
 	RSRQ        int      `json:"rsrq"`
 	RSSI        int      `json:"rssi"`
@@ -48,4 +47,22 @@ type TimeInfo struct {
 	LocalTime     int64  `json:"localTime"`
 	LocalTimeZone string `json:"localTimeZone"`
 	UpTime        int    `json:"upTime"`
+}
+
+// PingStats represents the latency statistics.
+type PingStats struct {
+	Min      float64 `json:"min"`
+	Avg      float64 `json:"avg"`
+	Max      float64 `json:"max"`
+	StdDev   float64 `json:"stddev"`
+	Loss     float64 `json:"loss"`
+	LastRTT  float64 `json:"last_rtt"`
+	Sent     int     `json:"sent"`
+	Received int     `json:"received"`
+}
+
+// CombinedStats represents the full set of monitored data.
+type CombinedStats struct {
+	Gateway GatewayResponse `json:"gateway"`
+	Ping    PingStats       `json:"ping"`
 }

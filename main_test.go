@@ -17,10 +17,11 @@ func TestColorizeRSRP(t *testing.T) {
 		expected string // We look for the color code substring
 	}{
 		{-70, ColorGreen},   // Excellent > -80
-		{-85, ColorYellow},  // Good/Fair -80 to -100
-		{-105, ColorRed},    // Poor < -100
+		{-85, ColorYellow},  // Good -80 to -95
+		{-105, ColorYellow}, // Fair -95 to -110
+		{-115, ColorRed},    // Poor < -110
 		{-80, ColorYellow},  // Edge case
-		{-100, ColorYellow}, // Edge case
+		{-110, ColorYellow}, // Edge case
 	}
 
 	for _, tt := range tests {

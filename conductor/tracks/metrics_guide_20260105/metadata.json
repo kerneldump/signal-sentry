@@ -1,0 +1,7 @@
+{
+  "id": "metrics_guide_20260105",
+  "name": "Update Signal Metrics Guide",
+  "description": "Refine RSRP thresholds, add n25 band, and clarify gNBID/CID definitions.",
+  "status": "completed",
+  "created_at": "2026-01-05"
+}

@@ -1,0 +1,7 @@
+{
+  "id": "historical_analysis_20260105",
+  "name": "Historical Analysis Tool",
+  "description": "CLI subcommand to analyze stats.log and generate summary report.",
+  "status": "todo",
+  "created_at": "2026-01-05"
+}

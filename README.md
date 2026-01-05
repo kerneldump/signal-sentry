@@ -62,12 +62,26 @@ The tool provides a live, color-coded dashboard (colors not shown in this text p
 
 SIGNAL METRICS GUIDE:
 ---------------------
-* BAND:  The frequency band in use (e.g., n41 is faster mid-band, n71 is longer range).
+* BAND:  The frequency band in use.
+         n41: High speed, shorter range (Ultra Capacity).
+         n25: Balanced speed and range.
+         n71: Long range, slower speeds.
+
 * RSRP:  (Reference Signal Received Power) Your main signal strength.
-         Excellent > -80 | Good -80 to -90 | Fair -90 to -100 | Poor < -100.
-* SINR:  (Signal-to-Interference-plus-Noise Ratio) Your signal quality (cleanliness).
-         Higher is better. > 20 is excellent. < 0 means high noise/interference.
-* BARS:  General signal rating (1-5).
+         Excellent > -80  | Good -80 to -95
+         Fair -95 to -110 | Poor < -110 (Risk of drops).
+
+* SINR:  (Signal-to-Interference-plus-Noise Ratio) Signal quality.
+         Higher is better. > 20 is excellent.
+         < 0 means high noise (your speed will suffer).
+
+* RSRQ:  (Reference Signal Received Quality) The congestion indicator.
+         If SINR is Good (high) but RSRQ is Bad (low), the tower is
+         likely congested with heavy traffic.
+
+* CID & gNBID:
+         gNBID identifies the physical TOWER.
+         CID identifies the SECTOR (which side of the tower you are facing).
 
  TYPE | BANDS      | BARS | RSRP | SINR | RSRQ | RSSI | CID   | TOWER (gNBID/PCID)
 ------+------------+------+------+------+------+------+-------+-------------------
@@ -80,16 +94,20 @@ SIGNAL METRICS GUIDE:
 
 ### Signal Metrics Guide
 
-- **BAND:** The frequency band in use (e.g., n41, n71).
+- **BAND:** The frequency band in use.
+  - **n41:** High speed, shorter range (Ultra Capacity).
+  - **n25:** Balanced speed and range.
+  - **n71:** Long range, slower speeds.
 - **RSRP (Reference Signal Received Power):** Main signal strength.
   - Excellent: > -80
-  - Good: -80 to -90
-  - Fair: -90 to -100
-  - Poor: < -100
+  - Good: -80 to -95
+  - Fair: -95 to -110
+  - Poor: < -110 (Risk of drops)
 - **SINR (Signal-to-Interference-plus-Noise Ratio):** Signal quality.
   - Excellent: > 20
-  - Poor: < 0
-- **CID & gNBID:** Tower and sector identifiers. Changes here indicate tower switching.
+  - Poor: < 0 (Speed will suffer)
+- **RSRQ (Reference Signal Received Quality):** The congestion indicator.
+- **CID & gNBID:** gNBID identifies the physical tower. CID identifies the sector.
 
 ## Development
 

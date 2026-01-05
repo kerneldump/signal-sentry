@@ -1,0 +1,7 @@
+{
+  "id": "ping_stats_20260105",
+  "name": "Ping Statistics & Configuration",
+  "description": "Add background ping stats (min/avg/max/stddev/loss) and config file support.",
+  "status": "completed",
+  "created_at": "2026-01-05"
+}
