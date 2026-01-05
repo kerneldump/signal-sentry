@@ -38,7 +38,7 @@ func main() {
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Signal Sentry - T-Mobile Gateway Signal Monitor (%s)\n\n", Version)
-		fmt.Fprintf(os.Stderr, "Usage:\n  signal-sentry [flags]\n\n")
+		fmt.Fprintf(os.Stderr, "Usage:\n  signal-sentry [flags]\n  signal-sentry analyze [flags]\n\n")
 		fmt.Fprintf(os.Stderr, "Flags:\n")
 		flag.PrintDefaults()
 	}
