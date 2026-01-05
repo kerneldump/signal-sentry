@@ -54,6 +54,31 @@ func (p *Pinger) GetStats() models.PingStats {
 	return p.stats
 }
 
+// GetStatsAndReset returns the current statistics and resets the internal counters.
+// This is useful for interval-based reporting (e.g. "stats for the last 10 seconds").
+func (p *Pinger) GetStatsAndReset() models.PingStats {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	// Capture current state
+	currentStats := p.stats
+
+	// Reset state for next window
+	p.stats = models.PingStats{
+		Min:     0,
+		Max:     0,
+		Avg:     0,
+		StdDev:  0,
+		Loss:    0,
+		Sent:    0,
+		Received: 0,
+		LastRTT: currentStats.LastRTT, // Preserve LastRTT for continuity context if needed
+	}
+	p.m2 = 0
+
+	return currentStats
+}
+
 
 var (
 	// macOS ping output example for stats:
@@ -87,7 +112,8 @@ func (p *Pinger) ping() {
 		rtt, _ := strconv.ParseFloat(matches[2], 64) // Use avg from ping output as the RTT
 		p.stats.LastRTT = rtt
 
-		if p.stats.Received == 1 {
+		// If Min is 0, this is the first successful sample in this window
+		if p.stats.Min == 0 {
 			p.stats.Min = rtt
 			p.stats.Max = rtt
 			p.stats.Avg = rtt
@@ -102,6 +128,7 @@ func (p *Pinger) ping() {
 			}
 
 			// Welford's algorithm for running mean and variance
+			// Note: We use Received count for the weight, but we ensure stats are init'd first
 			delta := rtt - p.stats.Avg
 			p.stats.Avg += delta / float64(p.stats.Received)
 			delta2 := rtt - p.stats.Avg

@@ -147,7 +147,9 @@ func main() {
 			continue
 		}
 
-		pingData := pg.GetStats()
+		// Get stats for the specific interval window (and reset for next window)
+		pingData := pg.GetStatsAndReset()
+		
 		data := &models.CombinedStats{
 			Gateway: *gatewayData,
 			Ping:    pingData,
@@ -237,9 +239,9 @@ const (
 
 func printHeader() {
 	// Column Widths (Visible):
-	// Type: 6, Bands: 12, Bars: 6, RSRP: 7, SINR: 7, RSRQ: 6, RSSI: 6, CID: 7, Tower: 17, Ping: 22, Loss: 7
-	fmt.Println(" TYPE  | BANDS      | BARS | RSRP  | SINR  | RSRQ | RSSI | CID   | TWR gNBID/PCIDE | PING: MIN AVG MAX STD  | LOSS ")
-	fmt.Println("-------+------------+------+-------+-------+------+------+-------+-----------------+------------------------+-------")
+	// Type: 6, Bands: 12, Bars: 6, RSRP: 7, SINR: 7, RSRQ: 6, RSSI: 6, CID: 7, Tower: 17, PingLoss: 25
+	fmt.Println(" TYPE  | BANDS      | BARS | RSRP  | SINR  | RSRQ | RSSI | CID   | TWR gNBID/PCIDE | PING MIN AVG MAX STD LOSS")
+	fmt.Println("-------+------------+------+-------+-------+------+------+-------+-----------------+-------------------------")
 }
 
 func printRow(connType string, stats models.ConnectionStats, ping models.PingStats) {
@@ -261,21 +263,21 @@ func printRow(connType string, stats models.ConnectionStats, ping models.PingSta
 		typeStr = fmt.Sprintf("%s%-2s%s", ColorBlue, connType, ColorReset)
 	}
 
-	// Format ping values to fit under headers
-	// Header: " MIN AVG MAX STD " (15 visible chars)
-	// Indices relative to PING: MIN(7), AVG(11), MAX(15), STD(19)
-	pingValStr := fmt.Sprintf("%4.1f %3.1f %3.1f %3.1f", ping.Min, ping.Avg, ping.Max, ping.StdDev)
+	// Format each value to exactly 4 characters (e.g. 44.0 or 0.0%)
+	// Note: Loss formatted as %3.1f to be e.g. "0.0" then we append "%"
+	pMin := fmt.Sprintf("%4.1f", ping.Min)
+	pAvg := fmt.Sprintf("%4.1f", ping.Avg)
+	pMax := fmt.Sprintf("%4.1f", ping.Max)
+	pStd := fmt.Sprintf("%4.1f", ping.StdDev)
 	
-	// Format loss string
-	lossValStr := fmt.Sprintf("%5.1f%%", ping.Loss)
-	lossStr := lossValStr
+	lossVal := fmt.Sprintf("%3.1f%%", ping.Loss)
 	if ping.Loss > 0 {
-		lossStr = fmt.Sprintf("%s%s%s", ColorRed, lossValStr, ColorReset)
+		lossVal = fmt.Sprintf("%s%s%s", ColorRed, lossVal, ColorReset)
 	}
 
 	// Print row with aligned columns
-	// %-22s for ping matches the widened header
-	fmt.Printf("  %s   | %-10s | %s  | %s  | %s  | %-4d | %-4d | %-5d | %-15d | %-22s |%s \n",
+	// Combined Ping/Loss section starts after one space following the pipe
+	fmt.Printf("  %s   | %-10s | %s  | %s  | %s  | %-4d | %-4d | %-5d | %-15d | %s %s %s %s %s \n",
 		typeStr,
 		bands,
 		colorizeBars(stats.Bars),
@@ -285,8 +287,7 @@ func printRow(connType string, stats models.ConnectionStats, ping models.PingSta
 		stats.RSSI,
 		stats.CID,
 		towerID,
-		"     "+pingValStr, // 5 spaces to align MIN under MIN
-		lossStr,
+		pMin, pAvg, pMax, pStd, lossVal,
 	)
 }
 
