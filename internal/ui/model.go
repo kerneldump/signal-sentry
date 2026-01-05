@@ -18,21 +18,23 @@ import (
 // Msg types
 type tickMsg time.Time
 type dataMsg struct {
-	Stats *models.CombinedStats
-	Err   error
+	Stats        *models.CombinedStats
+	LifetimePing models.PingStats
+	Err          error
 }
 
 // Model represents the state of the TUI.
 type Model struct {
-	cfg      *config.Config
-	client   *http.Client
-	pinger   *pinger.Pinger
-	loggers  []logger.Logger
-	buffer   []*models.CombinedStats
-	interval time.Duration
-	width    int
-	height   int
-	err      error
+	cfg          *config.Config
+	client       *http.Client
+	pinger       *pinger.Pinger
+	loggers      []logger.Logger
+	buffer       []*models.CombinedStats
+	lifetimePing models.PingStats
+	interval     time.Duration
+	width        int
+	height       int
+	err          error
 }
 
 func NewModel(cfg *config.Config, client *http.Client, pg *pinger.Pinger, loggers []logger.Logger) *Model {
@@ -86,6 +88,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = msg.Err
 		} else {
 			m.err = nil
+			m.lifetimePing = msg.LifetimePing // Update lifetime stats
+			
 			// 1. Log data
 			for _, l := range m.loggers {
 				_ = l.Log(msg.Stats) // Best effort logging
@@ -116,11 +120,14 @@ func (m *Model) fetchData() tea.Cmd {
 		}
 
 		pingData := m.pinger.GetStatsAndReset()
+		lifetimePing := m.pinger.GetLifetimeStats()
+
 		return dataMsg{
 			Stats: &models.CombinedStats{
 				Gateway: *gatewayData,
 				Ping:    pingData,
 			},
+			LifetimePing: lifetimePing,
 		}
 	}
 }
@@ -149,20 +156,29 @@ func (m *Model) View() string {
 
 	// 2. Metrics Guide (Small version)
 	s.WriteString("RSRP: Exc >-80, Good -95, Fair -110, Poor <-110 | SINR: Exc >20, Poor <0\n")
+	
+	// 3. Lifetime Ping Stats
+	// PING: 531 packets transmitted, 531 packets received, 0.0% packet loss
+	// round-trip min/avg/max/stddev = 20.986/49.955/855.485/53.432 ms
+	lp := m.lifetimePing
+	s.WriteString(fmt.Sprintf("PING: %d packets transmitted, %d packets received, %.1f%% packet loss\n", 
+		lp.Sent, lp.Received, lp.Loss))
+	s.WriteString(fmt.Sprintf("round-trip min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n", 
+		lp.Min, lp.Avg, lp.Max, lp.StdDev))
+
 	s.WriteString(fmt.Sprintf("Interval: %v (Press +/- to adjust, q to quit)\n\n", m.interval))
 
 	if m.err != nil {
 		s.WriteString(errorStyle.Render(fmt.Sprintf("Error: %v", m.err)) + "\n\n")
 	}
 
-	// 3. Header
+	// 4. Header
 	s.WriteString(headerStyle.Render(" TYPE  | BANDS      | BARS | RSRP  | SINR  | RSRQ | RSSI | CID   | TWR gNBID/PCIDE | MIN AVG MAX STD LOSS") + "\n")
 	s.WriteString("-------+------------+------+-------+-------+------+------+-------+-----------------+-------------------------\n")
 
-	// 4. Buffer
-	// guideLines: Device(1), Metrics(1), Interval(1), Empty(1), Header(1), Separator(1) = 6
-	// We'll leave 1 line for error/footer if needed.
-	guideLines := 7
+	// 5. Buffer
+	// guideLines: Device(1), Metrics(1), PingStats(2), Interval(1), Empty(1), Header(1), Separator(1) = 8
+	guideLines := 9 // Adjusted for 2 extra ping lines + safety
 	linesUsed := 0
 	maxLines := m.height - guideLines
 	if maxLines < 0 {

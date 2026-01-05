@@ -16,8 +16,10 @@ import (
 type Pinger struct {
 	Target   string
 	Interval time.Duration
-	stats    models.PingStats
-	m2       float64 // for running variance calculation
+	stats    models.PingStats // Reset every interval
+	lifetime models.PingStats // Cumulative for session
+	m2       float64          // for interval variance
+	lifeM2   float64          // for lifetime variance
 	mu       sync.RWMutex
 }
 
@@ -52,6 +54,13 @@ func (p *Pinger) GetStats() models.PingStats {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.stats
+}
+
+// GetLifetimeStats returns the cumulative statistics for the session.
+func (p *Pinger) GetLifetimeStats() models.PingStats {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.lifetime
 }
 
 // GetStatsAndReset returns the current statistics and resets the internal counters.
@@ -98,44 +107,58 @@ func (p *Pinger) ping() {
 	defer p.mu.Unlock()
 
 	p.stats.Sent++
+	p.lifetime.Sent++
 
 	if err != nil {
+		// Update Loss %
 		p.stats.Loss = float64(p.stats.Sent-p.stats.Received) / float64(p.stats.Sent) * 100
+		p.lifetime.Loss = float64(p.lifetime.Sent-p.lifetime.Received) / float64(p.lifetime.Sent) * 100
 		return
 	}
 
 	p.stats.Received++
+	p.lifetime.Received++
 	p.stats.Loss = float64(p.stats.Sent-p.stats.Received) / float64(p.stats.Sent) * 100
+	p.lifetime.Loss = float64(p.lifetime.Sent-p.lifetime.Received) / float64(p.lifetime.Sent) * 100
 
 	matches := macStatsRegex.FindStringSubmatch(string(out))
 	if len(matches) == 5 {
 		rtt, _ := strconv.ParseFloat(matches[2], 64) // Use avg from ping output as the RTT
 		p.stats.LastRTT = rtt
+		p.lifetime.LastRTT = rtt
 
-		// If Min is 0, this is the first successful sample in this window
-		if p.stats.Min == 0 {
+		// Update Interval Stats
+		if p.stats.Min == 0 { // First successful sample in window
 			p.stats.Min = rtt
 			p.stats.Max = rtt
 			p.stats.Avg = rtt
 			p.stats.StdDev = 0
 			p.m2 = 0
 		} else {
-			if rtt < p.stats.Min {
-				p.stats.Min = rtt
-			}
-			if rtt > p.stats.Max {
-				p.stats.Max = rtt
-			}
-
-			// Welford's algorithm for running mean and variance
-			// Note: We use Received count for the weight, but we ensure stats are init'd first
+			if rtt < p.stats.Min { p.stats.Min = rtt }
+			if rtt > p.stats.Max { p.stats.Max = rtt }
 			delta := rtt - p.stats.Avg
 			p.stats.Avg += delta / float64(p.stats.Received)
 			delta2 := rtt - p.stats.Avg
 			p.m2 += delta * delta2
+			p.stats.StdDev = math.Sqrt(p.m2 / float64(p.stats.Received))
+		}
 
-			variance := p.m2 / float64(p.stats.Received)
-			p.stats.StdDev = math.Sqrt(variance)
+		// Update Lifetime Stats
+		if p.lifetime.Received == 1 {
+			p.lifetime.Min = rtt
+			p.lifetime.Max = rtt
+			p.lifetime.Avg = rtt
+			p.lifetime.StdDev = 0
+			p.lifeM2 = 0
+		} else {
+			if rtt < p.lifetime.Min { p.lifetime.Min = rtt }
+			if rtt > p.lifetime.Max { p.lifetime.Max = rtt }
+			delta := rtt - p.lifetime.Avg
+			p.lifetime.Avg += delta / float64(p.lifetime.Received)
+			delta2 := rtt - p.lifetime.Avg
+			p.lifeM2 += delta * delta2
+			p.lifetime.StdDev = math.Sqrt(p.lifeM2 / float64(p.lifetime.Received))
 		}
 	}
 }
