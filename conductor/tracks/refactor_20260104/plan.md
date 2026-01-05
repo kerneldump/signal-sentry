@@ -7,8 +7,8 @@
 
 ## Phase 2: Logic Migration and Refactoring
 - [x] Task: Write failing tests for `gateway.FetchStats` (TDD) [30798f8]
-- [~] Task: Move and refactor `fetchStats` from `main.go` to `internal/gateway/client.go`
-- [ ] Task: Implement retry logic in `gateway.FetchStats`
+- [x] Task: Move and refactor `fetchStats` from `main.go` to `internal/gateway/client.go` [cdd8593]
+- [x] Task: Implement retry logic in `gateway.FetchStats` [cdd8593]
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Logic Migration and Refactoring' (Protocol in workflow.md)
 
 ## Phase 3: Integration and Cleanup
