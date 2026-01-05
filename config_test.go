@@ -21,3 +21,23 @@ func TestValidateInterval(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateFormat(t *testing.T) {
+	tests := []struct {
+		input    string
+		wantErr  bool
+	}{
+		{"json", false},
+		{"csv", false},
+		{"", false}, // Default (disabled)
+		{"xml", true},
+		{"txt", true},
+	}
+
+	for _, tt := range tests {
+		err := validateFormat(tt.input)
+		if (err != nil) != tt.wantErr {
+			t.Errorf("validateFormat(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
+		}
+	}
+}

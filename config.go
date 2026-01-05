@@ -8,3 +8,12 @@ func validateInterval(interval int) error {
 	}
 	return nil
 }
+
+func validateFormat(format string) error {
+	switch format {
+	case "json", "csv", "":
+		return nil
+	default:
+		return fmt.Errorf("invalid format: %s. Must be 'json' or 'csv'", format)
+	}
+}

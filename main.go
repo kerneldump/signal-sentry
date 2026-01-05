@@ -18,11 +18,34 @@ const (
 
 func main() {
 	intervalPtr := flag.Int("interval", 5, "Refresh interval in seconds")
+	formatPtr := flag.String("format", "", "Output format (json or csv)")
+	outputPtr := flag.String("output", "", "Output filename (default: signal-data.json/csv)")
 	flag.Parse()
 
 	if err := validateInterval(*intervalPtr); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
+	}
+
+	if err := validateFormat(*formatPtr); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	// Determine default filename if not provided but format is set
+	var outputFilename string
+	if *formatPtr != "" {
+		if *outputPtr == "" {
+			if *formatPtr == "json" {
+				outputFilename = "signal-data.json"
+			} else {
+				outputFilename = "signal-data.csv"
+			}
+		} else {
+			outputFilename = *outputPtr
+		}
+		// Placeholders for usage later
+		_ = outputFilename
 	}
 
 	refreshDuration := time.Duration(*intervalPtr) * time.Second
