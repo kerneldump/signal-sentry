@@ -2,7 +2,10 @@ package pinger
 
 import (
 	"context"
+	"fmt"
 	"math"
+	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -90,8 +93,7 @@ func (p *Pinger) ping() {
 	// Create a new pro-bing pinger
 	pinger, err := probing.NewPinger(p.Target)
 	if err != nil {
-		// Log error or just return, counting as loss handled by flow below?
-		// If we can't resolve or create socket, it's effectively a loss.
+		fmt.Fprintf(os.Stderr, "Error initializing pinger: %v\n", err)
 		p.recordLoss()
 		return
 	}
@@ -106,6 +108,11 @@ func (p *Pinger) ping() {
 
 	err = pinger.Run() // Blocks until finished
 	if err != nil {
+		if strings.Contains(err.Error(), "operation not permitted") || strings.Contains(err.Error(), "permission denied") {
+			fmt.Fprintf(os.Stderr, "Ping Error: Permission denied. ICMP ping requires root privileges (sudo).\n")
+		} else {
+			fmt.Fprintf(os.Stderr, "Error running ping: %v\n", err)
+		}
 		p.recordLoss()
 		return
 	}
