@@ -9,11 +9,14 @@ import (
 	"strings"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"tmobile-stats/internal/analysis"
 	"tmobile-stats/internal/config"
 	"tmobile-stats/internal/gateway"
 	"tmobile-stats/internal/logger"
 	"tmobile-stats/internal/models"
 	"tmobile-stats/internal/pinger"
+	"tmobile-stats/internal/ui"
 )
 
 const (
@@ -41,6 +44,12 @@ func main() {
 	}
 
 	flag.Parse()
+
+	// Check for 'analyze' subcommand
+	if len(os.Args) > 1 && os.Args[1] == "analyze" {
+		runAnalysis(os.Args[2:])
+		return
+	}
 
 	if *versionFlag {
 		fmt.Printf("Signal Sentry %s\n", Version)
@@ -90,35 +99,29 @@ func main() {
 		}
 	}
 
-	// Initialize User Logger
-	var appLogger logger.Logger
+	// Initialize Loggers
+	var loggers []logger.Logger
 	if cfg.Format != "" {
+		var l logger.Logger
 		var err error
 		if cfg.Format == "json" {
-			appLogger, err = logger.NewJSONLogger(cfg.Output)
+			l, err = logger.NewJSONLogger(cfg.Output)
 		} else if cfg.Format == "csv" {
-			appLogger, err = logger.NewCSVLogger(cfg.Output)
+			l, err = logger.NewCSVLogger(cfg.Output)
 		}
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
 			os.Exit(1)
 		}
-		defer appLogger.Close()
+		loggers = append(loggers, l)
+		defer l.Close()
 	}
 
-	// Initialize Background Logger (Always-on JSON)
-	var bgLogger logger.Logger
-	if !cfg.DisableAutoLog {
-		// Avoid double-logging if user explicitly chose stats.log
-		if cfg.Output != "stats.log" {
-			var err error
-			bgLogger, err = logger.NewJSONLogger("stats.log")
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to initialize background logger: %v\n", err)
-				// We don't exit here, just warn and continue without BG logging
-			} else {
-				defer bgLogger.Close()
-			}
+	if !cfg.DisableAutoLog && cfg.Output != "stats.log" {
+		l, err := logger.NewJSONLogger("stats.log")
+		if err == nil {
+			loggers = append(loggers, l)
+			defer l.Close()
 		}
 	}
 
@@ -129,17 +132,41 @@ func main() {
 	pg := pinger.NewPinger(cfg.PingTarget, 1*time.Second)
 	go pg.Run(ctx)
 
-	refreshDuration := time.Duration(cfg.RefreshInterval) * time.Second
+	client := &http.Client{Timeout: 2 * time.Second}
 
-	client := &http.Client{
-		Timeout: 2 * time.Second,
+	// 6. Branch Execution
+	if cfg.LiveMode {
+		p := tea.NewProgram(ui.NewModel(cfg, client, pg, loggers), tea.WithAltScreen())
+		if _, err := p.Run(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error running UI: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		runLegacyLoop(cfg, client, pg, loggers)
 	}
+}
 
+func runAnalysis(args []string) {
+	fs := flag.NewFlagSet("analyze", flag.ExitOnError)
+	inputPtr := fs.String("input", "stats.log", "Path to log file to analyze")
+	fs.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: signal-sentry analyze [flags]\n\n")
+		fs.PrintDefaults()
+	}
+	fs.Parse(args)
+
+	if err := analysis.Run(*inputPtr); err != nil {
+		fmt.Fprintf(os.Stderr, "Analysis failed: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func runLegacyLoop(cfg *config.Config, client *http.Client, pg *pinger.Pinger, loggers []logger.Logger) {
+	refreshDuration := time.Duration(cfg.RefreshInterval) * time.Second
 	firstRun := true
 	linesPrinted := 0
 
 	for {
-		// 1. Fetch Data
 		gatewayData, err := gateway.FetchStats(client, cfg.RouterURL)
 		if err != nil {
 			fmt.Printf("Error fetching stats: %v\n", err)
@@ -147,50 +174,39 @@ func main() {
 			continue
 		}
 
-		// Get stats for the specific interval window (and reset for next window)
 		pingData := pg.GetStatsAndReset()
-		
 		data := &models.CombinedStats{
 			Gateway: *gatewayData,
 			Ping:    pingData,
 		}
 
-		// 2. Log Data if enabled (User + Background)
-		if appLogger != nil {
-			if err := appLogger.Log(data); err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to log data: %v\n", err)
-			}
-		}
-		if bgLogger != nil {
-			if err := bgLogger.Log(data); err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to write to stats.log: %v\n", err)
+		for _, l := range loggers {
+			if err := l.Log(data); err != nil {
+				fmt.Fprintf(os.Stderr, "Logging error: %v\n", err)
 			}
 		}
 
-		// 3. Initial Setup (Device Info & Legend)
 		if firstRun {
 			printDeviceInfo(data.Gateway.Device)
 			printLegend()
 			firstRun = false
 		}
 
-		// 3. Print Header periodically
 		if linesPrinted%headerInterval == 0 {
 			printHeader()
 		}
 
-		// 4. Print Data Rows
 		printRow("5G", data.Gateway.Signal.FiveG, data.Ping)
-		// Check if we have valid 4G data (e.g., non-zero bars or bands)
 		if len(data.Gateway.Signal.FourG.Bands) > 0 || data.Gateway.Signal.FourG.Bars > 0 {
 			printRow("4G", data.Gateway.Signal.FourG, data.Ping)
-			linesPrinted++ // Count extra line for 4G
+			linesPrinted++
 		}
 
 		linesPrinted++
 		time.Sleep(refreshDuration)
 	}
 }
+
 
 func printDeviceInfo(d models.DeviceInfo) {
 	fmt.Println("================================================================================================================================================================")
