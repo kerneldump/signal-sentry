@@ -8,7 +8,7 @@
 ## Phase 2: JSON Implementation
 - [x] Task: Implement `JSONLogger` in `internal/logger` [9ea7de8]
 - [x] Task: Write tests for JSON logging (verifying file output) [9ea7de8]
-- [~] Task: Integration: Hook up JSON logging in `main.go`
+- [x] Task: Integration: Hook up JSON logging in `main.go` [27a019e]
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: JSON Implementation' (Protocol in workflow.md)
 
 ## Phase 3: CSV Implementation
