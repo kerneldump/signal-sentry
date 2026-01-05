@@ -2,7 +2,7 @@
 
 ## Phase 1: Package Scaffolding and Struct Migration
 - [x] Task: Create `internal/gateway` directory structure [ca0370c]
-- [ ] Task: Move data structures from `main.go` to `internal/gateway/models.go`
+- [x] Task: Move data structures from `main.go` to `internal/gateway/models.go` [7b04b6e]
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Package Scaffolding and Struct Migration' (Protocol in workflow.md)
 
 ## Phase 2: Logic Migration and Refactoring
