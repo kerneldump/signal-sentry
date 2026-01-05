@@ -6,9 +6,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Flag Parsing and Logger Scaffolding' (Protocol in workflow.md) [4210f78]
 
 ## Phase 2: JSON Implementation
-- [ ] Task: Implement `JSONLogger` in `internal/logger`
-- [ ] Task: Write tests for JSON logging (verifying file output)
-- [ ] Task: Integration: Hook up JSON logging in `main.go`
+- [x] Task: Implement `JSONLogger` in `internal/logger` [9ea7de8]
+- [x] Task: Write tests for JSON logging (verifying file output) [9ea7de8]
+- [~] Task: Integration: Hook up JSON logging in `main.go`
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: JSON Implementation' (Protocol in workflow.md)
 
 ## Phase 3: CSV Implementation
