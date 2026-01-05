@@ -1,0 +1,4 @@
+Task: Move data structures from main.go to internal/gateway/models.go
+Summary: Created internal/gateway/models.go with the GatewayResponse and related structs. Added a unit test to verify JSON marshaling.
+Files: internal/gateway/models.go, internal/gateway/models_test.go
+Why: To separate data models from the main application logic, enabling reuse and better organization.
