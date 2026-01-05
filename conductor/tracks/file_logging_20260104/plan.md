@@ -2,7 +2,7 @@
 
 ## Phase 1: Flag Parsing and Logger Scaffolding
 - [x] Task: Update `main.go` to support `-format` and `-output` flags (requires coordination with the interval track) [cb9365b]
-- [~] Task: Create `internal/logger` package with `Logger` interface
+- [x] Task: Create `internal/logger` package with `Logger` interface [eec85b8]
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Flag Parsing and Logger Scaffolding' (Protocol in workflow.md)
 
 ## Phase 2: JSON Implementation
