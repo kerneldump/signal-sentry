@@ -1,0 +1,4 @@
+Task: Implement CSVLogger in internal/logger
+Summary: Implemented the CSVLogger struct with automatic header generation. Added unit tests to verify CSV formatting and file I/O.
+Files: internal/logger/csv.go, internal/logger/csv_test.go
+Why: To provide CSV logging capability as part of the file logging feature.
