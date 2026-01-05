@@ -1,0 +1,4 @@
+Task: Move and refactor fetchStats from main.go to internal/gateway/client.go
+Summary: Implemented FetchStats and fetchOnce in the gateway package. Included a retry mechanism (3 attempts with backoff).
+Files: internal/gateway/client.go
+Why: To provide a robust and testable client for the T-Mobile Gateway API, separate from the UI/CLI logic.
