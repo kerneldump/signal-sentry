@@ -1,0 +1,4 @@
+Task: Create internal/logger package with Logger interface
+Summary: Created the internal/logger package and defined the Logger interface with Log and Close methods. Added a test to verify interface compliance.
+Files: internal/logger/logger.go, internal/logger/logger_test.go
+Why: To provide a common abstraction for different logging formats (JSON, CSV).
