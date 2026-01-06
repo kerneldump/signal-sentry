@@ -1,0 +1,12 @@
+Task: Enhance Analysis Report
+
+Summary:
+Updated the historical analysis report to provide clearer and more actionable insights.
+- **Live Tower Identification:** The analysis now tracks and marks the last seen tower as 'live' in the tower breakdown list.
+- **Global Loss Calculation:** Fixed misleading packet loss statistics by calculating the global loss percentage (Total Lost / Total Sent) instead of showing the maximum loss from any single interval.
+- **Documentation:** Updated README.md to include the 'chart' subcommand and new workflows.
+
+Files Modified:
+- internal/analysis/analysis.go: Implemented LastTowerID tracking and global loss calculation.
+- internal/analysis/analysis_test.go: Added tests for live tower marking and loss calculation.
+- README.md: Added chart command documentation.
