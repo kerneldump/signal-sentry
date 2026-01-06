@@ -1,0 +1,12 @@
+Task: Track Real-Time Signal Bars
+
+Summary:
+Enhanced the historical analysis report to indicate the current (most recent) signal bars status.
+
+Details:
+- Updated the 'BARS SEEN' section to append a 'real-time' suffix to the bars value observed in the last log entry.
+- This helps users quickly correlate historical signal strength distribution with their current connection quality.
+
+Files Modified:
+- internal/analysis/analysis.go: Added LastBars tracking to Report struct and print logic.
+- internal/analysis/analysis_test.go: Added TestAnalyzeRealTimeBars to verify the new marker.
