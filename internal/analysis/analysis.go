@@ -41,14 +41,15 @@ type Report struct {
 	TotalSamples int
 	StartTime    time.Time
 	EndTime      time.Time
-	
-	RSRP   Metric
-	SINR   Metric
-	Ping   Metric
-	Loss   Metric
-	
+
+	RSRP Metric
+	SINR Metric
+	Ping Metric
+	Loss Metric
+
 	Bands  map[string]int
 	Towers map[int]int
+	Bars   map[float64]int
 }
 
 func Run(path string) error {
@@ -61,6 +62,7 @@ func Run(path string) error {
 	report := &Report{
 		Bands:  make(map[string]int),
 		Towers: make(map[int]int),
+		Bars:   make(map[float64]int),
 	}
 	// Initialize Min values to avoid 0.0 bias
 	report.Ping.Min = 999999
@@ -75,8 +77,8 @@ func Run(path string) error {
 		}
 
 		report.TotalSamples++
-		// Use UpTime as a proxy for relative time if LocalTime isn't enough, 
-		// but let's assume we can use the current system time if needed, 
+		// Use UpTime as a proxy for relative time if LocalTime isn't enough,
+		// but let's assume we can use the current system time if needed,
 		// or better, Gateway.Time.LocalTime.
 		sampleTime := time.Unix(stats.Gateway.Time.LocalTime, 0)
 		if report.StartTime.IsZero() || sampleTime.Before(report.StartTime) {
@@ -88,7 +90,7 @@ func Run(path string) error {
 
 		report.RSRP.Add(float64(stats.Gateway.Signal.FiveG.RSRP))
 		report.SINR.Add(float64(stats.Gateway.Signal.FiveG.SINR))
-		
+
 		if stats.Ping.Received > 0 {
 			// Ignore 0.0 pings for Min calculation as it was a bug in earlier versions
 			if stats.Ping.Min > 0 {
@@ -111,6 +113,8 @@ func Run(path string) error {
 		if towerID != 0 {
 			report.Towers[towerID]++
 		}
+
+		report.Bars[stats.Gateway.Signal.FiveG.Bars]++
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -125,7 +129,7 @@ func printReport(r *Report) {
 	fmt.Println("================================================================================")
 	fmt.Println(" HISTORICAL SIGNAL ANALYSIS")
 	fmt.Println("================================================================================")
-	
+
 	if r.TotalSamples == 0 {
 		fmt.Println("No data samples found.")
 		return
@@ -155,7 +159,10 @@ func printReport(r *Report) {
 
 	fmt.Println("\nTOWERS SEEN:")
 	printTowerMap(r.Towers, r.TotalSamples)
-	
+
+	fmt.Println("\nBARS SEEN:")
+	printFloatMap(r.Bars, r.TotalSamples)
+
 	fmt.Println("================================================================================")
 }
 
@@ -180,5 +187,20 @@ func printTowerMap(m map[int]int, total int) {
 	for _, k := range keys {
 		pct := float64(m[k]) / float64(total) * 100
 		fmt.Printf("  %-10d %d samples (%.1f%%)\n", k, m[k], pct)
+	}
+}
+
+func printFloatMap(m map[float64]int, total int) {
+	keys := make([]float64, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Float64s(keys)
+	for _, k := range keys {
+		pct := float64(m[k]) / float64(total) * 100
+		// Print typical bar values (3, 4) without decimals if possible, but they are floats
+		// so using %g or %.0f might be cleaner if they are integers.
+		// However, user output shows "3" and "4". Let's use %g for general output which strips trailing zeros.
+		fmt.Printf("  %-10g %d samples (%.1f%%)\n", k, m[k], pct)
 	}
 }

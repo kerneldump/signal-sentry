@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"tmobile-stats/internal/analysis"
 	"tmobile-stats/internal/config"
 	"tmobile-stats/internal/gateway"
@@ -17,6 +16,8 @@ import (
 	"tmobile-stats/internal/models"
 	"tmobile-stats/internal/pinger"
 	"tmobile-stats/internal/ui"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 const (
@@ -27,7 +28,7 @@ const (
 func main() {
 	// 1. Initial Flags for Config Loading
 	configPath := flag.String("config", "config.json", "Path to config file (JSON)")
-	
+
 	// Temporarily define other flags to avoid parsing errors
 	intervalFlag := flag.Int("interval", 0, "Refresh interval in seconds")
 	formatFlag := flag.String("format", "", "Output format (json or csv)")
@@ -207,12 +208,11 @@ func runLegacyLoop(cfg *config.Config, client *http.Client, pg *pinger.Pinger, l
 	}
 }
 
-
 func printDeviceInfo(d models.DeviceInfo) {
-	fmt.Println("================================================================================================================================================================")
+	fmt.Println("===================================================================================================================")
 	fmt.Printf(" DEVICE INFO | Model: %-10s | FW: %-10s | Serial: %-15s | MAC: %s\n",
 		d.Model, d.SoftwareVersion, d.Serial, d.MacID)
-	fmt.Println("================================================================================================================================================================")
+	fmt.Println("===================================================================================================================")
 }
 
 func printLegend() {
