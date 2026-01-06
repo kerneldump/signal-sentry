@@ -75,13 +75,13 @@ func Analyze(input io.Reader, output io.Writer) error {
 	report.RSRP.Min = 0
 	report.SINR.Min = 99
 
-	scanner := bufio.NewScanner(input)
-	for scanner.Scan() {
-		var stats models.CombinedStats
-		if err := json.Unmarshal(scanner.Bytes(), &stats); err != nil {
-			continue // Skip malformed lines
-		}
+	// Fetch raw data using the new exported parser
+	data, err := ParseLog(input)
+	if err != nil {
+		return err
+	}
 
+	for _, stats := range data {
 		report.TotalSamples++
 		// Use UpTime as a proxy for relative time if LocalTime isn't enough,
 		// but let's assume we can use the current system time if needed,
@@ -123,12 +123,28 @@ func Analyze(input io.Reader, output io.Writer) error {
 		report.Bars[stats.Gateway.Signal.FiveG.Bars]++
 	}
 
-	if err := scanner.Err(); err != nil {
-		return err
-	}
-
 	printReport(output, report)
 	return nil
+}
+
+// ParseLog reads the provided reader and returns a slice of CombinedStats.
+// It skips malformed lines.
+func ParseLog(r io.Reader) ([]models.CombinedStats, error) {
+	var results []models.CombinedStats
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		var stats models.CombinedStats
+		if err := json.Unmarshal(scanner.Bytes(), &stats); err != nil {
+			continue // Skip malformed lines
+		}
+		results = append(results, stats)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 func printReport(w io.Writer, r *Report) {

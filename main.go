@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"tmobile-stats/internal/analysis"
+	"tmobile-stats/internal/charting"
 	"tmobile-stats/internal/config"
 	"tmobile-stats/internal/gateway"
 	"tmobile-stats/internal/logger"
@@ -47,9 +48,15 @@ func main() {
 	flag.Parse()
 
 	// Check for 'analyze' subcommand
-	if len(os.Args) > 1 && os.Args[1] == "analyze" {
-		runAnalysis(os.Args[2:])
-		return
+	if len(os.Args) >= 2 {
+		switch os.Args[1] {
+		case "analyze":
+			runAnalysis(os.Args[2:])
+			return
+		case "chart":
+			runChart(os.Args[2:])
+			return
+		}
 	}
 
 	if *versionFlag {
@@ -160,6 +167,38 @@ func runAnalysis(args []string) {
 		fmt.Fprintf(os.Stderr, "Analysis failed: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func runChart(args []string) {
+	fs := flag.NewFlagSet("chart", flag.ExitOnError)
+	inputPtr := fs.String("input", "stats.log", "Path to log file to analyze")
+	outputPtr := fs.String("output", "signal-analysis.png", "Path to save the chart image")
+	fs.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: signal-sentry chart [flags]\n\n")
+		fs.PrintDefaults()
+	}
+	fs.Parse(args)
+
+	file, err := os.Open(*inputPtr)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to open input file: %v\n", err)
+		os.Exit(1)
+	}
+	defer file.Close()
+
+	fmt.Printf("Parsing log file: %s ...\n", *inputPtr)
+	data, err := analysis.ParseLog(file)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to parse log: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Generating chart: %s ...\n", *outputPtr)
+	if err := charting.Generate(data, *outputPtr); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to generate chart: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Done!")
 }
 
 func runLegacyLoop(cfg *config.Config, client *http.Client, pg *pinger.Pinger, loggers []logger.Logger) {

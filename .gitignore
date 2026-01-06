@@ -19,3 +19,4 @@ Thumbs.db
 *.out
 coverage.txt
 stats.log
+*.png
