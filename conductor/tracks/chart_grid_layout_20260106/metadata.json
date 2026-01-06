@@ -1,0 +1,7 @@
+{
+  "id": "chart_grid_layout_20260106",
+  "name": "Chart Grid Layout (2x2)",
+  "description": "Refactor chart generation to use a 2x2 grid layout instead of a 1x4 vertical stack.",
+  "status": "completed",
+  "created": "2026-01-06"
+}

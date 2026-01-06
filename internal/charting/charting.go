@@ -171,64 +171,82 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 		healthXYs[i].Y = analysis.CalculateSignalHealth(d.Gateway.Signal.FiveG.RSRP, d.Gateway.Signal.FiveG.SINR)
 	}
 
+	// 1. Health Area (Background)
+	// Create a polygon for the filled area (requires closing the path to Y=0)
+	healthAreaXYs := make(plotter.XYs, len(healthXYs)+2)
+	copy(healthAreaXYs[1:], healthXYs)
+	healthAreaXYs[0] = plotter.XY{X: healthXYs[0].X, Y: 0}
+	healthAreaXYs[len(healthAreaXYs)-1] = plotter.XY{X: healthXYs[len(healthXYs)-1].X, Y: 0}
+
+	polyHealth, _ := plotter.NewPolygon(healthAreaXYs)
+	polyHealth.Color = color.RGBA{R: 240, G: 240, B: 240, A: 255} // Very Light Grey
+	polyHealth.LineStyle.Width = 0                                // No border for the area
+
+	// 2. Health Line (Top of area)
+	lineHealth, _ := plotter.NewLine(healthXYs)
+	lineHealth.Color = color.RGBA{R: 169, G: 169, B: 169, A: 255} // Dark Grey border
+	lineHealth.Width = vg.Points(1)
+
+	// 3. Reported Bars (Foreground)
 	lineBars, _ := plotter.NewLine(barsXYs)
 	lineBars.StepStyle = plotter.PreStep
-	lineBars.Color = color.RGBA{R: 128, G: 0, B: 128, A: 255} // Purple
+	lineBars.Color = color.RGBA{R: 0, G: 0, B: 0, A: 255} // Black
+	lineBars.Width = vg.Points(0.8)
 
-	lineHealth, _ := plotter.NewLine(healthXYs)
-	lineHealth.Color = color.RGBA{R: 0, G: 128, B: 128, A: 255} // Teal
-
-	pBars.Add(lineBars, lineHealth)
+	pBars.Add(polyHealth, lineHealth, lineBars)
 	pBars.Legend.Add("Reported Bars", lineBars)
 	pBars.Legend.Add("Signal Health", lineHealth)
 	pBars.Add(plotter.NewGrid())
 
 	// Combine into a single image
-	const width = 10 * vg.Inch
-	const height = 16 * vg.Inch // Maintains 4 rows height
+	const width = 20 * vg.Inch  // Double width
+	const height = 10 * vg.Inch // Adjusted height for 2 rows
 
 	c := vgimg.NewWith(vgimg.UseWH(width, height), vgimg.UseBackgroundColor(color.White))
 	dc := draw.New(c)
 
-	// Layout: 4 rows, 1 column
-	// Row 1 (Top): Latency + Loss
-	// Row 2: Signal
-	// Row 3: Bars
-	// Row 4 (Bot): Bands
+	// Layout: 2x2 Grid
+	// Col 1: Left, Col 2: Right
+	// Row 1: Top, Row 2: Bottom
 
-	rowHeight := height / 4
+	colWidth := width / 2
+	rowHeight := height / 2
 
+	// 1. Latency (Top Left)
 	rectLat := draw.Canvas{
 		Canvas: dc,
 		Rectangle: vg.Rectangle{
-			Min: vg.Point{X: 0, Y: rowHeight * 3},
-			Max: vg.Point{X: width, Y: height},
+			Min: vg.Point{X: 0, Y: rowHeight},
+			Max: vg.Point{X: colWidth, Y: height},
 		},
 	}
 	pLat.Draw(rectLat)
 
+	// 2. Signal Strength (Top Right)
 	rectSig := draw.Canvas{
 		Canvas: dc,
 		Rectangle: vg.Rectangle{
-			Min: vg.Point{X: 0, Y: rowHeight * 2},
-			Max: vg.Point{X: width, Y: rowHeight * 3},
+			Min: vg.Point{X: colWidth, Y: rowHeight},
+			Max: vg.Point{X: width, Y: height},
 		},
 	}
 	pH.Draw(rectSig)
 
+	// 3. Bars (Bottom Left)
 	rectBars := draw.Canvas{
 		Canvas: dc,
 		Rectangle: vg.Rectangle{
-			Min: vg.Point{X: 0, Y: rowHeight * 1},
-			Max: vg.Point{X: width, Y: rowHeight * 2},
+			Min: vg.Point{X: 0, Y: 0},
+			Max: vg.Point{X: colWidth, Y: rowHeight},
 		},
 	}
 	pBars.Draw(rectBars)
 
+	// 4. Bands (Bottom Right)
 	rectBand := draw.Canvas{
 		Canvas: dc,
 		Rectangle: vg.Rectangle{
-			Min: vg.Point{X: 0, Y: 0},
+			Min: vg.Point{X: colWidth, Y: 0},
 			Max: vg.Point{X: width, Y: rowHeight},
 		},
 	}
