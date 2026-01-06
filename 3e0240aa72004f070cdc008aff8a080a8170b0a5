@@ -1,0 +1,13 @@
+Task: Chart Smoothing for Signal Bars
+
+Summary:
+Implemented dynamic downsampling and smoothing for the Signal Bars chart to enhance trend visibility over long durations (e.g., 24h+).
+
+Details:
+- Added a 'downsample' helper function using bucket averaging.
+- Implemented time-based trigger: Smoothing activates only if data duration > 2 hours and total points > 300.
+- When active, the Reported Bars (black line) switches from a discrete Step-Line to a continuous Smooth-Line.
+- Other charts remain at raw resolution to maintain detail.
+
+Files Modified:
+- internal/charting/charting.go: Added downsample logic and conditional styling.
