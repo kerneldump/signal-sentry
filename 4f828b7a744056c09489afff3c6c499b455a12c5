@@ -1,0 +1,19 @@
+Task: Add Bar Averages and Signal Health Metric
+
+Summary:
+Enhanced the historical analysis report and charts with a new 'Signal Health' metric and statistical bar averages.
+
+Key Changes:
+- Implemented a weighted 'Signal Health' score (1.0-5.0) based on RSRP (70%) and SINR (30%).
+- Added 'BARS AVG' section to the analyze report showing Overall average, Last 1h average, and Signal Health.
+- Updated the 'Signal Bars' chart to display both Reported Bars and the calculated Signal Health line.
+- Optimized 'Last 1h' calculation by iterating backwards from the end of the data range.
+- Added comprehensive unit tests for the scoring logic and report integration.
+
+Files Created:
+- internal/analysis/scoring.go
+- internal/analysis/scoring_test.go
+
+Files Modified:
+- internal/analysis/analysis.go: Updated Report struct and Analyze logic.
+- internal/charting/charting.go: Integrated Signal Health line into the bars subplot.
