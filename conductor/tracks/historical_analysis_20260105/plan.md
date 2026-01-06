@@ -15,5 +15,6 @@
 
 ## Phase 3: Reporting
 - [x] Task: Implement `PrintReport(r *Report)` to format the stats nicely (using tabwriter or formatted printf). [git-hash]
+- [x] Task: Enhance report with live tower identification and global loss calculation. [873620c]
 - [x] Task: Verify: Create a sample `stats.log` with known values. Run `signal-sentry analyze` and check the math. [git-hash]
 
