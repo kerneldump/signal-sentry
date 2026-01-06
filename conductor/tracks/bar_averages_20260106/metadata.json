@@ -1,0 +1,7 @@
+{
+  "id": "bar_averages_20260106",
+  "name": "Bar Averages and Derived Signal Metrics",
+  "description": "Calculate and display average signal bars (Overall, Last 1h) and a derived 'Signal Health' score based on RSRP and SINR.",
+  "status": "completed",
+  "created": "2026-01-06"
+}

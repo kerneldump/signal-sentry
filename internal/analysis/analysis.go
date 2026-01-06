@@ -58,6 +58,11 @@ type Report struct {
 	Bars   map[float64]int
 	LastTowerID int
 	LastBars    float64
+
+	AvgBarsOverall  float64
+	AvgBars1h       float64
+	AvgSignalHealth float64
+	Has1hData       bool
 }
 
 func Run(path string, filter *TimeFilter) error {
@@ -88,6 +93,9 @@ func Analyze(input io.Reader, output io.Writer, filter *TimeFilter) error {
 		return err
 	}
 
+	var sumBars float64
+	var sumHealth float64
+
 	for _, stats := range data {
 		report.TotalSamples++
 		// Use UpTime as a proxy for relative time if LocalTime isn't enough,
@@ -103,6 +111,10 @@ func Analyze(input io.Reader, output io.Writer, filter *TimeFilter) error {
 
 		report.RSRP.Add(float64(stats.Gateway.Signal.FiveG.RSRP))
 		report.SINR.Add(float64(stats.Gateway.Signal.FiveG.SINR))
+
+		// Accumulate Bars & Health
+		sumBars += stats.Gateway.Signal.FiveG.Bars
+		sumHealth += CalculateSignalHealth(stats.Gateway.Signal.FiveG.RSRP, stats.Gateway.Signal.FiveG.SINR)
 
 		if stats.Ping.Received > 0 {
 			// Ignore 0.0 pings for Min calculation as it was a bug in earlier versions
@@ -132,6 +144,33 @@ func Analyze(input io.Reader, output io.Writer, filter *TimeFilter) error {
 
 		report.Bars[stats.Gateway.Signal.FiveG.Bars]++
 		report.LastBars = stats.Gateway.Signal.FiveG.Bars
+	}
+
+	// Finalize Averages
+	if report.TotalSamples > 0 {
+		report.AvgBarsOverall = sumBars / float64(report.TotalSamples)
+		report.AvgSignalHealth = sumHealth / float64(report.TotalSamples)
+
+		// Calculate Last 1h
+		oneHourAgo := report.EndTime.Add(-1 * time.Hour)
+		var sumBars1h float64
+		var count1h int
+
+		// Iterate backwards from the end of data slice
+		for i := len(data) - 1; i >= 0; i-- {
+			sampleTime := time.Unix(data[i].Gateway.Time.LocalTime, 0)
+			if sampleTime.Before(oneHourAgo) {
+				break
+			}
+			sumBars1h += data[i].Gateway.Signal.FiveG.Bars
+			count1h++
+		}
+
+		// Only show Last 1h if we have at least 55m of data duration
+		if report.EndTime.Sub(report.StartTime) >= 55*time.Minute && count1h > 0 {
+			report.AvgBars1h = sumBars1h / float64(count1h)
+			report.Has1hData = true
+		}
 	}
 
 	printReport(output, report)
@@ -218,6 +257,15 @@ func printReport(w io.Writer, r *Report) {
 
 	fmt.Fprintln(w, "\nBARS SEEN:")
 	printFloatMap(w, r.Bars, r.TotalSamples, r.LastBars)
+
+	fmt.Fprintln(w, "\nBARS AVG:")
+	tw2 := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(tw2, "Overall\t%.1f\n", r.AvgBarsOverall)
+	if r.Has1hData {
+		fmt.Fprintf(tw2, "Last 1h\t%.1f\n", r.AvgBars1h)
+	}
+	fmt.Fprintf(tw2, "SgnlHealth\t%.1f\n", r.AvgSignalHealth)
+	tw2.Flush()
 
 	fmt.Fprintln(w, "================================================================================")
 }

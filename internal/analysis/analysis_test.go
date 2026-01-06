@@ -34,6 +34,9 @@ func TestAnalyzeEndToEnd(t *testing.T) {
 		"3", "1 samples (50.0%)",
 		"4", "1 samples (50.0%) real-time",
 		"Loss (%)", "-", "0.0", "-",
+		"BARS AVG:",
+		"Overall", "3.5",
+		"SgnlHealth", "3.4",
 	}
 
 	for _, check := range checks {

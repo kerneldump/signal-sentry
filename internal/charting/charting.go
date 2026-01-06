@@ -12,6 +12,7 @@ import (
 	"gonum.org/v1/plot/vg/draw"
 	"gonum.org/v1/plot/vg/vgimg"
 
+	"tmobile-stats/internal/analysis"
 	"tmobile-stats/internal/models"
 )
 
@@ -160,17 +161,26 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	})
 
 	barsXYs := make(plotter.XYs, len(data))
+	healthXYs := make(plotter.XYs, len(data))
 	for i, d := range data {
 		t := getTime(d.Gateway.Time.LocalTime)
 		barsXYs[i].X = t
 		barsXYs[i].Y = float64(d.Gateway.Signal.FiveG.Bars)
+
+		healthXYs[i].X = t
+		healthXYs[i].Y = analysis.CalculateSignalHealth(d.Gateway.Signal.FiveG.RSRP, d.Gateway.Signal.FiveG.SINR)
 	}
 
 	lineBars, _ := plotter.NewLine(barsXYs)
 	lineBars.StepStyle = plotter.PreStep
 	lineBars.Color = color.RGBA{R: 128, G: 0, B: 128, A: 255} // Purple
 
-	pBars.Add(lineBars)
+	lineHealth, _ := plotter.NewLine(healthXYs)
+	lineHealth.Color = color.RGBA{R: 0, G: 128, B: 128, A: 255} // Teal
+
+	pBars.Add(lineBars, lineHealth)
+	pBars.Legend.Add("Reported Bars", lineBars)
+	pBars.Legend.Add("Signal Health", lineHealth)
 	pBars.Add(plotter.NewGrid())
 
 	// Combine into a single image

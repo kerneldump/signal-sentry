@@ -56,6 +56,9 @@ This file tracks all major tracks for the project. Each track has its own detail
 ## [x] Track: Date Range Filtering for Analysis
 *Link: [./conductor/tracks/date_range_filtering_20260106/](./conductor/tracks/date_range_filtering_20260106/)*
 
+## [x] Track: Bar Averages and Derived Signal Metrics
+*Link: [./conductor/tracks/bar_averages_20260106/](./conductor/tracks/bar_averages_20260106/)*
+
 
 
 
