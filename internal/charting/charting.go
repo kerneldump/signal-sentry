@@ -16,6 +16,46 @@ import (
 	"tmobile-stats/internal/models"
 )
 
+// downsample reduces the resolution of the data by averaging points into buckets.
+func downsample(data plotter.XYs, maxPoints int) plotter.XYs {
+	if len(data) <= maxPoints {
+		return data
+	}
+
+	bucketSize := float64(len(data)) / float64(maxPoints)
+	downsampled := make(plotter.XYs, 0, maxPoints)
+
+	for i := 0; i < maxPoints; i++ {
+		start := int(float64(i) * bucketSize)
+		end := int(float64(i+1) * bucketSize)
+		if end > len(data) {
+			end = len(data)
+		}
+		if start >= end {
+			continue
+		}
+
+		var sumY float64
+		var sumX float64
+		count := 0.0
+
+		for k := start; k < end; k++ {
+			sumX += data[k].X
+			sumY += data[k].Y
+			count++
+		}
+
+		if count > 0 {
+			downsampled = append(downsampled, plotter.XY{
+				X: sumX / count,
+				Y: sumY / count,
+			})
+		}
+	}
+
+	return downsampled
+}
+
 // Generate creates a PNG chart from the provided stats and saves it to outputFile.
 func Generate(data []models.CombinedStats, outputFile string) error {
 	if len(data) == 0 {
@@ -171,6 +211,23 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 		healthXYs[i].Y = analysis.CalculateSignalHealth(d.Gateway.Signal.FiveG.RSRP, d.Gateway.Signal.FiveG.SINR)
 	}
 
+	// Check if smoothing is needed
+	// Criteria: Duration > 2 hours AND Data Points > 300
+	shouldSmooth := false
+	if len(data) > 1 {
+		startTime := data[0].Gateway.Time.LocalTime
+		endTime := data[len(data)-1].Gateway.Time.LocalTime
+		duration := float64(endTime - startTime)
+		
+		// 2 hours = 7200 seconds
+		if duration > 7200 && len(barsXYs) > 300 {
+			shouldSmooth = true
+			// Downsample to target ~300 points
+			barsXYs = downsample(barsXYs, 300)
+			healthXYs = downsample(healthXYs, 300)
+		}
+	}
+
 	// 1. Health Area (Background)
 	// Create a polygon for the filled area (requires closing the path to Y=0)
 	healthAreaXYs := make(plotter.XYs, len(healthXYs)+2)
@@ -189,9 +246,17 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 
 	// 3. Reported Bars (Foreground)
 	lineBars, _ := plotter.NewLine(barsXYs)
-	lineBars.StepStyle = plotter.PreStep
 	lineBars.Color = color.RGBA{R: 0, G: 0, B: 0, A: 255} // Black
-	lineBars.Width = vg.Points(0.8)
+	
+	if shouldSmooth {
+		// Smoothed Mode: Normal Line (Continuous), Thinner
+		lineBars.StepStyle = plotter.NoStep
+		lineBars.Width = vg.Points(0.8) // Keep it thin
+	} else {
+		// Raw Mode: Step Line (Discrete)
+		lineBars.StepStyle = plotter.PreStep
+		lineBars.Width = vg.Points(0.8)
+	}
 
 	pBars.Add(polyHealth, lineHealth, lineBars)
 	pBars.Legend.Add("Reported Bars", lineBars)

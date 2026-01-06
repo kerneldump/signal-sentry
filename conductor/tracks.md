@@ -62,6 +62,9 @@ This file tracks all major tracks for the project. Each track has its own detail
 ## [x] Track: Chart Grid Layout (2x2)
 *Link: [./conductor/tracks/chart_grid_layout_20260106/](./conductor/tracks/chart_grid_layout_20260106/)*
 
+## [x] Track: Chart Smoothing for Signal Bars
+*Link: [./conductor/tracks/chart_smoothing_20260106/](./conductor/tracks/chart_smoothing_20260106/)*
+
 
 
 

@@ -1,0 +1,7 @@
+{
+  "id": "chart_smoothing_20260106",
+  "name": "Chart Smoothing for Signal Bars",
+  "description": "Implement dynamic downsampling for the Signal Bars chart to improve readability on long-duration datasets.",
+  "status": "completed",
+  "created": "2026-01-06"
+}
