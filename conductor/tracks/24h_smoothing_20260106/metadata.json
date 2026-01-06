@@ -1,0 +1,7 @@
+{
+  "id": "24h_smoothing_20260106",
+  "name": "24h Smoothing Trigger for All Charts",
+  "description": "Apply dynamic downsampling to all charts (Latency, Signal Strength, Bands) when data duration exceeds 24 hours.",
+  "status": "completed",
+  "created": "2026-01-06"
+}

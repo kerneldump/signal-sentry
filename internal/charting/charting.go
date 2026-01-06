@@ -213,7 +213,8 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 
 	// Check if smoothing is needed
 	// Criteria: Duration > 2 hours AND Data Points > 300
-	shouldSmooth := false
+	shouldSmoothBars := false
+
 	if len(data) > 1 {
 		startTime := data[0].Gateway.Time.LocalTime
 		endTime := data[len(data)-1].Gateway.Time.LocalTime
@@ -221,10 +222,21 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 		
 		// 2 hours = 7200 seconds
 		if duration > 7200 && len(barsXYs) > 300 {
-			shouldSmooth = true
-			// Downsample to target ~300 points
+			shouldSmoothBars = true
+			// Downsample Bars to target ~300 points
 			barsXYs = downsample(barsXYs, 300)
 			healthXYs = downsample(healthXYs, 300)
+		}
+
+		// 24 hours = 86400 seconds
+		if duration > 86400 && len(latencyXYs) > 600 {
+			// Downsample others to target ~600 points (higher fidelity)
+			latencyXYs = downsample(latencyXYs, 600)
+			stdDevXYs = downsample(stdDevXYs, 600)
+			lossXYs = downsample(lossXYs, 600)
+			rsrpXYs = downsample(rsrpXYs, 600)
+			sinrXYs = downsample(sinrXYs, 600)
+			bandXYs = downsample(bandXYs, 600)
 		}
 	}
 
@@ -248,7 +260,7 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	lineBars, _ := plotter.NewLine(barsXYs)
 	lineBars.Color = color.RGBA{R: 0, G: 0, B: 0, A: 255} // Black
 	
-	if shouldSmooth {
+	if shouldSmoothBars {
 		// Smoothed Mode: Normal Line (Continuous), Thinner
 		lineBars.StepStyle = plotter.NoStep
 		lineBars.Width = vg.Points(0.8) // Keep it thin

@@ -65,6 +65,9 @@ This file tracks all major tracks for the project. Each track has its own detail
 ## [x] Track: Chart Smoothing for Signal Bars
 *Link: [./conductor/tracks/chart_smoothing_20260106/](./conductor/tracks/chart_smoothing_20260106/)*
 
+## [x] Track: 24h Smoothing Trigger for All Charts
+*Link: [./conductor/tracks/24h_smoothing_20260106/](./conductor/tracks/24h_smoothing_20260106/)*
+
 
 
 
