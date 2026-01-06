@@ -57,9 +57,11 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	timeTicks := plot.TimeTicks{Format: "15:04"}
 
 	// Create Plots
+
+	// 1. Latency & Packet Loss
 	pLat := plot.New()
-	pLat.Title.Text = "Latency & StdDev"
-	pLat.Y.Label.Text = "ms"
+	pLat.Title.Text = "Latency & Packet Loss"
+	pLat.Y.Label.Text = "ms / %"
 	pLat.X.Tick.Marker = timeTicks
 
 	lineLat, _ := plotter.NewLine(latencyXYs)
@@ -69,11 +71,16 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	lineStd.Color = color.RGBA{R: 0, G: 255, B: 255, A: 255}           // Cyan
 	lineStd.LineStyle.Dashes = []vg.Length{vg.Points(5), vg.Points(5)} // Dashed
 
-	pLat.Add(lineLat, lineStd)
-	pLat.Legend.Add("Avg", lineLat)
+	lineLoss, _ := plotter.NewLine(lossXYs)
+	lineLoss.Color = color.RGBA{R: 0, G: 0, B: 0, A: 255} // Black
+
+	pLat.Add(lineLat, lineStd, lineLoss)
+	pLat.Legend.Add("Avg (ms)", lineLat)
 	pLat.Legend.Add("StdDev", lineStd)
+	pLat.Legend.Add("Loss (%)", lineLoss)
 	pLat.Add(plotter.NewGrid())
 
+	// 2. Signal Strength
 	pH := plot.New()
 	pH.Title.Text = "Signal Strength"
 	pH.Y.Label.Text = "dBm / dB"
@@ -90,20 +97,7 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	pH.Legend.Add("SINR", lineSINR)
 	pH.Add(plotter.NewGrid())
 
-	pLoss := plot.New()
-	pLoss.Title.Text = "Packet Loss"
-	pLoss.Y.Label.Text = "%"
-	pLoss.X.Tick.Marker = timeTicks
-	pLoss.Y.Min = 0
-	pLoss.Y.Max = 100
-
-	lineLoss, _ := plotter.NewLine(lossXYs)
-	lineLoss.Color = color.RGBA{R: 0, G: 0, B: 0, A: 255} // Black
-
-	pLoss.Add(lineLoss)
-	pLoss.Add(plotter.NewGrid())
-
-	// --- Band Plot ---
+	// 3. 5G Band Plot
 	pBand := plot.New()
 	pBand.Title.Text = "5G Band"
 	pBand.X.Tick.Marker = timeTicks
@@ -124,9 +118,7 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 
 		// Map bands to levels
 		// Priority: n41 > n25 > n71
-		// If multiple bands are present, pick the "best" one to show the primary connection capability
 		level := 0.0 // No signal/Unknown
-
 		hasBand := func(target string) bool {
 			for _, b := range d.Gateway.Signal.FiveG.Bands {
 				if b == target {
@@ -146,7 +138,6 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 		bandXYs[i].Y = level
 	}
 
-	// Use points for bands to clearly see samples
 	scatterBand, _ := plotter.NewScatter(bandXYs)
 	scatterBand.GlyphStyle.Radius = vg.Points(3)
 	scatterBand.GlyphStyle.Shape = draw.CircleGlyph{}
@@ -155,20 +146,47 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	pBand.Add(scatterBand)
 	pBand.Add(plotter.NewGrid())
 
+	// 4. Signal Bars Plot (New)
+	pBars := plot.New()
+	pBars.Title.Text = "Signal Bars"
+	pBars.Y.Label.Text = "Bars"
+	pBars.X.Tick.Marker = timeTicks
+	pBars.Y.Min = 0
+	pBars.Y.Max = 5
+	pBars.Y.Tick.Marker = plot.ConstantTicks([]plot.Tick{
+		{Value: 1, Label: "1"},
+		{Value: 2, Label: "2"},
+		{Value: 3, Label: "3"},
+		{Value: 4, Label: "4"},
+	})
+
+	barsXYs := make(plotter.XYs, len(data))
+	for i, d := range data {
+		t := getTime(d.Gateway.Time.LocalTime)
+		barsXYs[i].X = t
+		barsXYs[i].Y = float64(d.Gateway.Signal.FiveG.Bars)
+	}
+
+	lineBars, _ := plotter.NewLine(barsXYs)
+	lineBars.StepStyle = plotter.PreStep
+	lineBars.Color = color.RGBA{R: 128, G: 0, B: 128, A: 255} // Purple
+
+	pBars.Add(lineBars)
+	pBars.Add(plotter.NewGrid())
+
 	// Combine into a single image
 	const width = 10 * vg.Inch
-	const height = 16 * vg.Inch // Increased height for 4 rows
+	const height = 16 * vg.Inch // Maintains 4 rows height
 
 	c := vgimg.NewWith(vgimg.UseWH(width, height), vgimg.UseBackgroundColor(color.White))
 	dc := draw.New(c)
 
 	// Layout: 4 rows, 1 column
-	// Row 1 (Top): Latency
+	// Row 1 (Top): Latency + Loss
 	// Row 2: Signal
-	// Row 3: Loss
-	// Row 4 (Bot): Bands
+	// Row 3: Bands
+	// Row 4 (Bot): Bars
 
-	// Helper for row rectangles
 	rowHeight := height / 4
 
 	rectLat := draw.Canvas{
@@ -189,23 +207,23 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	}
 	pH.Draw(rectSig)
 
-	rectLoss := draw.Canvas{
+	rectBand := draw.Canvas{
 		Canvas: dc,
 		Rectangle: vg.Rectangle{
 			Min: vg.Point{X: 0, Y: rowHeight * 1},
 			Max: vg.Point{X: width, Y: rowHeight * 2},
 		},
 	}
-	pLoss.Draw(rectLoss)
+	pBand.Draw(rectBand)
 
-	rectBand := draw.Canvas{
+	rectBars := draw.Canvas{
 		Canvas: dc,
 		Rectangle: vg.Rectangle{
 			Min: vg.Point{X: 0, Y: 0},
 			Max: vg.Point{X: width, Y: rowHeight},
 		},
 	}
-	pBand.Draw(rectBand)
+	pBars.Draw(rectBars)
 
 	// Save
 	f, err := os.Create(outputFile)
