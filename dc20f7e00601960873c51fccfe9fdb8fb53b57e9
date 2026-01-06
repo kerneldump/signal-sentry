@@ -1,0 +1,13 @@
+Task: 24h Smoothing Trigger for All Charts
+
+Summary:
+Extended the dynamic chart smoothing logic to cover all metrics (Latency, Signal, Bands) for very long duration datasets (> 24 hours).
+
+Triggers:
+- Bars Chart: Smooths if Duration > 2 hours (Target 300 pts).
+- Other Charts: Smooths if Duration > 24 hours (Target 600 pts).
+
+This ensures that daily reports remain detailed while weekly/long-term trends are rendered efficiently and cleanly.
+
+Files Modified:
+- internal/charting/charting.go: Added tiered smoothing logic for the 24h threshold.
