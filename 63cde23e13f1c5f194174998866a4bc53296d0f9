@@ -1,0 +1,18 @@
+Task: Add Date Range Filtering for Analysis
+
+Summary:
+Implemented time-based filtering for the 'analyze' and 'chart' subcommands, allowing users to focus on specific time windows.
+
+Features:
+- Added '-range', '-start', and '-end' flags to both subcommands.
+- '-range' accepts relative durations (e.g., '24h', '30m') calculated from the current time.
+- '-start'/' -end' accept ISO 8601 dates (YYYY-MM-DD [HH:MM:SS]).
+- Updated analysis report to display the active filter and the actual data range covered.
+- Filtering is applied during log parsing for efficiency.
+
+Files Modified:
+- main.go: Added flag parsing and wiring for filter creation.
+- internal/analysis/filter.go: New file implementing TimeFilter logic.
+- internal/analysis/analysis.go: Updated Analyze and ParseLog to respect the filter.
+- internal/analysis/filter_test.go: New tests for filtering logic.
+- internal/analysis/analysis_test.go: Updated tests for signature changes.
