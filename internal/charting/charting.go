@@ -118,7 +118,6 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 
 		// Map bands to levels
 		// Priority: n41 > n25 > n71
-		// If multiple bands are present, pick the "best" one to show the primary connection capability
 		level := 0.0 // No signal/Unknown
 		hasBand := func(target string) bool {
 			for _, b := range d.Gateway.Signal.FiveG.Bands {
@@ -147,7 +146,7 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	pBand.Add(scatterBand)
 	pBand.Add(plotter.NewGrid())
 
-	// 4. Signal Bars Plot (Thick Line Chart)
+	// 4. Signal Bars Plot (New)
 	pBars := plot.New()
 	pBars.Title.Text = "Signal Bars"
 	pBars.Y.Label.Text = "Bars"
@@ -169,7 +168,7 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	}
 
 	lineBars, _ := plotter.NewLine(barsXYs)
-	lineBars.Width = vg.Points(4)                             // Thick line
+	lineBars.StepStyle = plotter.PreStep
 	lineBars.Color = color.RGBA{R: 128, G: 0, B: 128, A: 255} // Purple
 
 	pBars.Add(lineBars)
@@ -185,8 +184,8 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	// Layout: 4 rows, 1 column
 	// Row 1 (Top): Latency + Loss
 	// Row 2: Signal
-	// Row 3: Bands
-	// Row 4 (Bot): Bars
+	// Row 3: Bars
+	// Row 4 (Bot): Bands
 
 	rowHeight := height / 4
 
@@ -208,23 +207,23 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	}
 	pH.Draw(rectSig)
 
-	rectBand := draw.Canvas{
+	rectBars := draw.Canvas{
 		Canvas: dc,
 		Rectangle: vg.Rectangle{
 			Min: vg.Point{X: 0, Y: rowHeight * 1},
 			Max: vg.Point{X: width, Y: rowHeight * 2},
 		},
 	}
-	pBand.Draw(rectBand)
+	pBars.Draw(rectBars)
 
-	rectBars := draw.Canvas{
+	rectBand := draw.Canvas{
 		Canvas: dc,
 		Rectangle: vg.Rectangle{
 			Min: vg.Point{X: 0, Y: 0},
 			Max: vg.Point{X: width, Y: rowHeight},
 		},
 	}
-	pBars.Draw(rectBars)
+	pBand.Draw(rectBand)
 
 	// Save
 	f, err := os.Create(outputFile)
