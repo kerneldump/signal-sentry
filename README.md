@@ -59,7 +59,13 @@ Generate a report from your collected logs.
 ```
 *   *Note: You can run this in a separate terminal while the monitor is running.*
 
-**3. Legacy/Scripting Mode**
+**3. Generate Charts**
+Create a visual graph of your signal history.
+```bash
+./tmobile-stats chart --input stats.log --output my-signal.png
+```
+
+**4. Legacy/Scripting Mode**
 Run with standard standard output (useful for piping to other tools).
 ```bash
 sudo ./tmobile-stats -interval 2
@@ -79,6 +85,9 @@ sudo ./tmobile-stats -interval 2
 
 - `analyze`: Parse a log file and display summary statistics.
   - `-input`: Path to the log file (default: `stats.log`).
+- `chart`: Generate a PNG chart of RSRP and SINR over time from a log file.
+  - `-input`: Path to the log file (default: `stats.log`).
+  - `-output`: Path to save the chart image (default: `signal-analysis.png`).
 
 ## Configuration
 
@@ -89,7 +98,10 @@ A `config.json` file can be used to set defaults. Example:
   "router_url": "http://192.168.12.1/TMI/v1/gateway?get=all",
   "ping_target": "8.8.8.8",
   "refresh_interval": 5,
-  "live_mode": true
+  "live_mode": true,
+  "format": "csv",
+  "output": "my-log.csv",
+  "disable_auto_log": false
 }
 ```
 

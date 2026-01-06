@@ -9,8 +9,8 @@ import (
 func TestAnalyzeEndToEnd(t *testing.T) {
 	// 1. Setup Test Data
 	jsonInput := `
-{"gateway":{"time":{"localTime":1767651600},"signal":{"5g":{"bands":["n41"],"bars":3.0,"rsrp":-100,"sinr":5,"gNBID":100},"4g":{}}},"ping":{"min":20,"loss":0}}
-{"gateway":{"time":{"localTime":1767651660},"signal":{"5g":{"bands":["n41"],"bars":4.0,"rsrp":-90,"sinr":10,"gNBID":100},"4g":{}}},"ping":{"min":20,"loss":0}}
+{"gateway":{"time":{"localTime":1767651600},"signal":{"5g":{"bands":["n41"],"bars":3.0,"rsrp":-100,"sinr":5,"gNBID":100},"4g":{}}},"ping":{"min":20,"loss":0,"sent":10,"received":10}}
+{"gateway":{"time":{"localTime":1767651660},"signal":{"5g":{"bands":["n41"],"bars":4.0,"rsrp":-90,"sinr":10,"gNBID":100},"4g":{}}},"ping":{"min":20,"loss":0,"sent":10,"received":10}}
 `
 	input := strings.NewReader(strings.TrimSpace(jsonInput))
 	var output bytes.Buffer
@@ -32,12 +32,78 @@ func TestAnalyzeEndToEnd(t *testing.T) {
 		"BARS SEEN:",
 		"3", "1 samples (50.0%)",
 		"4", "1 samples (50.0%)",
+		"Loss (%)", "-", "0.0", "-",
 	}
 
 	for _, check := range checks {
 		if !strings.Contains(result, check) {
 			t.Errorf("Expected output to contain %q, but it didn't.\nOutput:\n%s", check, result)
 		}
+	}
+}
+
+func TestAnalyzeLiveTower(t *testing.T) {
+	// 1. Setup Test Data with two towers
+	// First sample: Tower 100
+	// Second sample: Tower 200
+	jsonInput := `
+{"gateway":{"time":{"localTime":1767651600},"signal":{"5g":{"bands":["n41"],"bars":3.0,"rsrp":-100,"sinr":5,"gNBID":100},"4g":{}}},"ping":{"min":20,"loss":0}}
+{"gateway":{"time":{"localTime":1767651660},"signal":{"5g":{"bands":["n41"],"bars":4.0,"rsrp":-90,"sinr":10,"gNBID":200},"4g":{}}},"ping":{"min":20,"loss":0}}
+`
+	input := strings.NewReader(strings.TrimSpace(jsonInput))
+	var output bytes.Buffer
+
+	// 2. Run Analysis
+	err := Analyze(input, &output)
+	if err != nil {
+		t.Fatalf("Analyze failed: %v", err)
+	}
+
+	// 3. Verify Output
+	result := output.String()
+
+	expectedLive := "200        1 samples (50.0%) live"
+	if !strings.Contains(result, expectedLive) {
+		t.Errorf("Expected output to contain live tower marker %q.\nOutput:\n%s", expectedLive, result)
+	}
+
+	unexpectedLive := "100        1 samples (50.0%) live"
+	if strings.Contains(result, unexpectedLive) {
+		t.Errorf("Expected Tower 100 NOT to be marked live, but it was.\nOutput:\n%s", result)
+	}
+}
+
+func TestAnalyzeLossCalculation(t *testing.T) {
+	// Sample 1: 10 sent, 9 received (10% loss)
+	// Sample 2: 10 sent, 10 received (0% loss)
+	// Total: 20 sent, 19 received (1 lost). Global Loss = 5.0%
+	jsonInput := `
+{"gateway":{"time":{"localTime":1767651600},"signal":{"5g":{"bands":["n41"],"bars":3.0,"rsrp":-100,"sinr":5,"gNBID":100},"4g":{}}},"ping":{"min":20,"loss":10,"sent":10,"received":9}}
+{"gateway":{"time":{"localTime":1767651660},"signal":{"5g":{"bands":["n41"],"bars":4.0,"rsrp":-90,"sinr":10,"gNBID":100},"4g":{}}},"ping":{"min":20,"loss":0,"sent":10,"received":10}}
+`
+	input := strings.NewReader(strings.TrimSpace(jsonInput))
+	var output bytes.Buffer
+
+	err := Analyze(input, &output)
+	if err != nil {
+		t.Fatalf("Analyze failed: %v", err)
+	}
+
+	result := output.String()
+	// Check for "Loss (%)" row with "-" "5.0" "-"
+	// Using fields/contains might be safer than exact whitespace matching
+	lines := strings.Split(result, "\n")
+	foundLoss := false
+	for _, line := range lines {
+		if strings.Contains(line, "Loss (%)") {
+			foundLoss = true
+			if !strings.Contains(line, "-") || !strings.Contains(line, "5.0") {
+				t.Errorf("Expected Loss line to contain '-' and '5.0', got: %q", line)
+			}
+		}
+	}
+	if !foundLoss {
+		t.Error("Did not find Loss (%) row in output")
 	}
 }
 

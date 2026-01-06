@@ -49,9 +49,13 @@ type Report struct {
 	Ping Metric
 	Loss Metric
 
+	TotalPingSent int
+	TotalPingLost int
+
 	Bands  map[string]int
 	Towers map[int]int
 	Bars   map[float64]int
+	LastTowerID int
 }
 
 func Run(path string) error {
@@ -111,6 +115,8 @@ func Analyze(input io.Reader, output io.Writer) error {
 			report.Ping.Count++
 		}
 		report.Loss.Add(stats.Ping.Loss)
+		report.TotalPingSent += stats.Ping.Sent
+		report.TotalPingLost += stats.Ping.Sent - stats.Ping.Received
 
 		for _, b := range stats.Gateway.Signal.FiveG.Bands {
 			report.Bands[b]++
@@ -118,6 +124,7 @@ func Analyze(input io.Reader, output io.Writer) error {
 		towerID := stats.Gateway.Signal.FiveG.GNBID
 		if towerID != 0 {
 			report.Towers[towerID]++
+			report.LastTowerID = towerID
 		}
 
 		report.Bars[stats.Gateway.Signal.FiveG.Bars]++
@@ -173,14 +180,19 @@ func printReport(w io.Writer, r *Report) {
 		pMin = 0
 	}
 	fmt.Fprintf(tw, "Ping (ms)\t%.1f\t%.1f\t%.1f\n", pMin, r.Ping.Avg(), r.Ping.Max)
-	fmt.Fprintf(tw, "Loss (%%)\t%.1f\t%.1f\t%.1f\n", r.Loss.Min, r.Loss.Avg(), r.Loss.Max)
+
+	globalLoss := 0.0
+	if r.TotalPingSent > 0 {
+		globalLoss = float64(r.TotalPingLost) / float64(r.TotalPingSent) * 100
+	}
+	fmt.Fprintf(tw, "Loss (%%)\t-\t%.1f\t-\n", globalLoss)
 	tw.Flush()
 
 	fmt.Fprintln(w, "\nBANDS SEEN:")
 	printMap(w, r.Bands, r.TotalSamples)
 
 	fmt.Fprintln(w, "\nTOWERS SEEN:")
-	printTowerMap(w, r.Towers, r.TotalSamples)
+	printTowerMap(w, r.Towers, r.TotalSamples, r.LastTowerID)
 
 	fmt.Fprintln(w, "\nBARS SEEN:")
 	printFloatMap(w, r.Bars, r.TotalSamples)
@@ -200,7 +212,7 @@ func printMap(w io.Writer, m map[string]int, total int) {
 	}
 }
 
-func printTowerMap(w io.Writer, m map[int]int, total int) {
+func printTowerMap(w io.Writer, m map[int]int, total int, liveTowerID int) {
 	keys := make([]int, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -208,7 +220,11 @@ func printTowerMap(w io.Writer, m map[int]int, total int) {
 	sort.Ints(keys)
 	for _, k := range keys {
 		pct := float64(m[k]) / float64(total) * 100
-		fmt.Fprintf(w, "  %-10d %d samples (%.1f%%)\n", k, m[k], pct)
+		suffix := ""
+		if k == liveTowerID {
+			suffix = " live"
+		}
+		fmt.Fprintf(w, "  %-10d %d samples (%.1f%%)%s\n", k, m[k], pct, suffix)
 	}
 }
 
