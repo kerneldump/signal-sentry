@@ -80,7 +80,7 @@ func TestFetchStats(t *testing.T) {
 	mockJSON := `{
 		"device": {
 			"model": "TMO-G5AR",
-			"serial": "***REMOVED***",
+			"serial": "MOCK_SERIAL_123",
 			"hardwareVersion": "R01",
 			"softwareVersion": "1.00.02"
 		},
