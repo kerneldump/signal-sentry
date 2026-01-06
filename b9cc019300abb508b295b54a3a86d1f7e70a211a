@@ -1,0 +1,18 @@
+Task: Chart Grid Layout (2x2)
+
+Summary:
+Reorganized the chart output from a 1x4 vertical stack to a 2x2 grid layout. This makes the generated image more compact (wider but shorter) and easier to view on standard screens.
+
+Layout:
+- Top-Left: Latency & Packet Loss
+- Top-Right: Signal Strength (RSRP/SINR)
+- Bottom-Left: Signal Bars (Reported & Health)
+- Bottom-Right: 5G Band
+
+Visual Updates:
+- Signal Bars chart now uses a High-Contrast style:
+    - Reported Bars: Solid Black Step-Line (0.8pt).
+    - Signal Health: Light Grey Filled Area with Dark Grey Border.
+
+Files Modified:
+- internal/charting/charting.go: Updated canvas dimensions and grid coordinates.
