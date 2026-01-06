@@ -57,6 +57,7 @@ type Report struct {
 	Towers map[int]int
 	Bars   map[float64]int
 	LastTowerID int
+	LastBars    float64
 }
 
 func Run(path string, filter *TimeFilter) error {
@@ -130,6 +131,7 @@ func Analyze(input io.Reader, output io.Writer, filter *TimeFilter) error {
 		}
 
 		report.Bars[stats.Gateway.Signal.FiveG.Bars]++
+		report.LastBars = stats.Gateway.Signal.FiveG.Bars
 	}
 
 	printReport(output, report)
@@ -215,7 +217,7 @@ func printReport(w io.Writer, r *Report) {
 	printTowerMap(w, r.Towers, r.TotalSamples, r.LastTowerID)
 
 	fmt.Fprintln(w, "\nBARS SEEN:")
-	printFloatMap(w, r.Bars, r.TotalSamples)
+	printFloatMap(w, r.Bars, r.TotalSamples, r.LastBars)
 
 	fmt.Fprintln(w, "================================================================================")
 }
@@ -248,7 +250,7 @@ func printTowerMap(w io.Writer, m map[int]int, total int, liveTowerID int) {
 	}
 }
 
-func printFloatMap(w io.Writer, m map[float64]int, total int) {
+func printFloatMap(w io.Writer, m map[float64]int, total int, realTimeVal float64) {
 	keys := make([]float64, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -256,9 +258,13 @@ func printFloatMap(w io.Writer, m map[float64]int, total int) {
 	sort.Float64s(keys)
 	for _, k := range keys {
 		pct := float64(m[k]) / float64(total) * 100
+		suffix := ""
+		if k == realTimeVal {
+			suffix = " real-time"
+		}
 		// Print typical bar values (3, 4) without decimals if possible, but they are floats
 		// so using %g or %.0f might be cleaner if they are integers.
 		// However, user output shows "3" and "4". Let's use %g for general output which strips trailing zeros.
-		fmt.Fprintf(w, "  %-10g %d samples (%.1f%%)\n", k, m[k], pct)
+		fmt.Fprintf(w, "  %-10g %d samples (%.1f%%)%s\n", k, m[k], pct, suffix)
 	}
 }

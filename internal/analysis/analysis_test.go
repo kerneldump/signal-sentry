@@ -32,7 +32,7 @@ func TestAnalyzeEndToEnd(t *testing.T) {
 		"SINR (dB)", "5", "7.5", "10",
 		"BARS SEEN:",
 		"3", "1 samples (50.0%)",
-		"4", "1 samples (50.0%)",
+		"4", "1 samples (50.0%) real-time",
 		"Loss (%)", "-", "0.0", "-",
 	}
 
@@ -152,5 +152,35 @@ func TestAnalyzeWithFilter(t *testing.T) {
 	}
 	if !strings.Contains(result, "-90") {
 		t.Errorf("Expected sample with RSRP -90, but not found.\nOutput:\n%s", result)
+	}
+}
+
+func TestAnalyzeRealTimeBars(t *testing.T) {
+	// 1. Setup Test Data
+	// Last sample has 5 bars
+	jsonInput := `
+{"gateway":{"time":{"localTime":1767651600},"signal":{"5g":{"bands":["n41"],"bars":3.0,"rsrp":-100,"sinr":5,"gNBID":100},"4g":{}}},"ping":{"min":20,"loss":0}}
+{"gateway":{"time":{"localTime":1767651660},"signal":{"5g":{"bands":["n41"],"bars":5.0,"rsrp":-80,"sinr":15,"gNBID":100},"4g":{}}},"ping":{"min":20,"loss":0}}
+`
+	input := strings.NewReader(strings.TrimSpace(jsonInput))
+	var output bytes.Buffer
+
+	// 2. Run Analysis
+	err := Analyze(input, &output, nil)
+	if err != nil {
+		t.Fatalf("Analyze failed: %v", err)
+	}
+
+	// 3. Verify Output
+	result := output.String()
+
+	expectedRealTime := "5          1 samples (50.0%) real-time"
+	if !strings.Contains(result, expectedRealTime) {
+		t.Errorf("Expected output to contain real-time bar marker %q.\nOutput:\n%s", expectedRealTime, result)
+	}
+
+	unexpectedRealTime := "3          1 samples (50.0%) real-time"
+	if strings.Contains(result, unexpectedRealTime) {
+		t.Errorf("Expected Bars 3 NOT to be marked real-time, but it was.\nOutput:\n%s", result)
 	}
 }
