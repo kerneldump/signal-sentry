@@ -147,7 +147,7 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	pBand.Add(scatterBand)
 	pBand.Add(plotter.NewGrid())
 
-	// 4. Signal Bars Plot (Column/Bar Chart)
+	// 4. Signal Bars Plot (Thick Line Chart)
 	pBars := plot.New()
 	pBars.Title.Text = "Signal Bars"
 	pBars.Y.Label.Text = "Bars"
@@ -161,35 +161,18 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 		{Value: 4, Label: "4"},
 	})
 
-	// To simulate columns on a time axis, we use YErrorBars.
-	// We center Y at val/2 and extend error by val/2 up and down,
-	// effectively drawing a vertical line from 0 to val.
 	barsXYs := make(plotter.XYs, len(data))
-	barsErrs := make(plotter.YErrors, len(data))
-
 	for i, d := range data {
 		t := getTime(d.Gateway.Time.LocalTime)
-		val := float64(d.Gateway.Signal.FiveG.Bars)
-
 		barsXYs[i].X = t
-		barsXYs[i].Y = val / 2.0
-
-		barsErrs[i].Low = val / 2.0
-		barsErrs[i].High = val / 2.0
+		barsXYs[i].Y = float64(d.Gateway.Signal.FiveG.Bars)
 	}
 
-	// Make struct satisfying YErrorer
-	barsData := struct {
-		plotter.XYs
-		plotter.YErrors
-	}{barsXYs, barsErrs}
+	lineBars, _ := plotter.NewLine(barsXYs)
+	lineBars.Width = vg.Points(4)                             // Thick line
+	lineBars.Color = color.RGBA{R: 128, G: 0, B: 128, A: 255} // Purple
 
-	barsPlot, _ := plotter.NewYErrorBars(barsData)
-	barsPlot.LineStyle.Width = vg.Points(3)                             // Thick vertical lines = Columns
-	barsPlot.LineStyle.Color = color.RGBA{R: 128, G: 0, B: 128, A: 255} // Purple
-	barsPlot.CapWidth = 0                                               // No caps
-
-	pBars.Add(barsPlot)
+	pBars.Add(lineBars)
 	pBars.Add(plotter.NewGrid())
 
 	// Combine into a single image
