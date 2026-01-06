@@ -138,12 +138,11 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 		bandXYs[i].Y = level
 	}
 
-	scatterBand, _ := plotter.NewScatter(bandXYs)
-	scatterBand.GlyphStyle.Radius = vg.Points(3)
-	scatterBand.GlyphStyle.Shape = draw.CircleGlyph{}
-	scatterBand.Color = color.RGBA{R: 255, G: 165, B: 0, A: 255} // Orange
+	lineBand, _ := plotter.NewLine(bandXYs)
+	lineBand.StepStyle = plotter.PreStep
+	lineBand.Color = color.RGBA{R: 255, G: 165, B: 0, A: 255} // Orange
 
-	pBand.Add(scatterBand)
+	pBand.Add(lineBand)
 	pBand.Add(plotter.NewGrid())
 
 	// 4. Signal Bars Plot (New)
