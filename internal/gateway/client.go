@@ -10,16 +10,20 @@ import (
 	"tmobile-stats/internal/models"
 )
 
+const (
+	DefaultRetryCount = 3
+	DefaultRetryDelay = 100 * time.Millisecond
+)
+
 // FetchStats retrieves all gateway statistics from the T-Mobile Home Internet Gateway.
 // It implements a basic retry mechanism for transient network or server errors.
 func FetchStats(client *http.Client, url string) (*models.GatewayResponse, error) {
-	const maxRetries = 3
 	var lastErr error
 
-	for i := 0; i < maxRetries; i++ {
+	for i := 0; i < DefaultRetryCount; i++ {
 		if i > 0 {
 			// Basic backoff
-			time.Sleep(time.Duration(i) * 100 * time.Millisecond)
+			time.Sleep(time.Duration(i) * DefaultRetryDelay)
 		}
 
 		data, err := fetchOnce(client, url)
@@ -29,7 +33,7 @@ func FetchStats(client *http.Client, url string) (*models.GatewayResponse, error
 		lastErr = err
 	}
 
-	return nil, fmt.Errorf("failed to fetch stats after %d attempts: %w", maxRetries, lastErr)
+	return nil, fmt.Errorf("failed to fetch stats after %d attempts: %w", DefaultRetryCount, lastErr)
 }
 
 func fetchOnce(client *http.Client, url string) (*models.GatewayResponse, error) {
@@ -55,4 +59,3 @@ func fetchOnce(client *http.Client, url string) (*models.GatewayResponse, error)
 
 	return &data, nil
 }
-
