@@ -1,0 +1,7 @@
+{
+  "id": "date_range_filtering_20260106",
+  "name": "Date Range Filtering for Analysis",
+  "description": "Add time-based filtering (start/end dates, relative range) to analysis and charting tools.",
+  "status": "completed",
+  "created": "2026-01-06"
+}

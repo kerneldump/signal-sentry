@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestAnalyzeEndToEnd(t *testing.T) {
@@ -16,7 +17,7 @@ func TestAnalyzeEndToEnd(t *testing.T) {
 	var output bytes.Buffer
 
 	// 2. Run Analysis
-	err := Analyze(input, &output)
+	err := Analyze(input, &output, nil)
 	if err != nil {
 		t.Fatalf("Analyze failed: %v", err)
 	}
@@ -54,7 +55,7 @@ func TestAnalyzeLiveTower(t *testing.T) {
 	var output bytes.Buffer
 
 	// 2. Run Analysis
-	err := Analyze(input, &output)
+	err := Analyze(input, &output, nil)
 	if err != nil {
 		t.Fatalf("Analyze failed: %v", err)
 	}
@@ -84,7 +85,7 @@ func TestAnalyzeLossCalculation(t *testing.T) {
 	input := strings.NewReader(strings.TrimSpace(jsonInput))
 	var output bytes.Buffer
 
-	err := Analyze(input, &output)
+	err := Analyze(input, &output, nil)
 	if err != nil {
 		t.Fatalf("Analyze failed: %v", err)
 	}
@@ -111,7 +112,7 @@ func TestAnalyzeEmptyInput(t *testing.T) {
 	input := strings.NewReader("")
 	var output bytes.Buffer
 
-	err := Analyze(input, &output)
+	err := Analyze(input, &output, nil)
 	if err != nil {
 		t.Fatalf("Analyze failed: %v", err)
 	}
@@ -119,5 +120,37 @@ func TestAnalyzeEmptyInput(t *testing.T) {
 	result := output.String()
 	if !strings.Contains(result, "No data samples found") {
 		t.Errorf("Expected 'No data samples found', got:\n%s", result)
+	}
+}
+
+func TestAnalyzeWithFilter(t *testing.T) {
+	// Sample 1: 10:00:00
+	// Sample 2: 11:00:00
+	// Sample 3: 12:00:00
+	jsonInput := `
+{"gateway":{"time":{"localTime":1736157600},"signal":{"5g":{"bands":["n41"],"bars":3.0,"rsrp":-100,"sinr":5,"gNBID":100},"4g":{}}},"ping":{"min":20,"loss":0}}
+{"gateway":{"time":{"localTime":1736161200},"signal":{"5g":{"bands":["n41"],"bars":4.0,"rsrp":-90,"sinr":10,"gNBID":100},"4g":{}}},"ping":{"min":20,"loss":0}}
+{"gateway":{"time":{"localTime":1736164800},"signal":{"5g":{"bands":["n41"],"bars":5.0,"rsrp":-80,"sinr":15,"gNBID":100},"4g":{}}},"ping":{"min":20,"loss":0}}
+`
+	input := strings.NewReader(strings.TrimSpace(jsonInput))
+	
+	// Filter for 10:30 to 11:30 (Only Sample 2 should remain)
+	filter := &TimeFilter{
+		Start: time.Unix(1736159400, 0),
+		End:   time.Unix(1736163000, 0),
+	}
+	
+	var output bytes.Buffer
+	err := Analyze(input, &output, filter)
+	if err != nil {
+		t.Fatalf("Analyze failed: %v", err)
+	}
+
+	result := output.String()
+	if !strings.Contains(result, "Total Samples: 1") {
+		t.Errorf("Expected 1 sample, got:\n%s", result)
+	}
+	if !strings.Contains(result, "-90") {
+		t.Errorf("Expected sample with RSRP -90, but not found.\nOutput:\n%s", result)
 	}
 }

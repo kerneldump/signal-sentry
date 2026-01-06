@@ -43,6 +43,7 @@ type Report struct {
 	TotalSamples int
 	StartTime    time.Time
 	EndTime      time.Time
+	Filter       *TimeFilter
 
 	RSRP Metric
 	SINR Metric
@@ -58,21 +59,22 @@ type Report struct {
 	LastTowerID int
 }
 
-func Run(path string) error {
+func Run(path string, filter *TimeFilter) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	return Analyze(file, os.Stdout)
+	return Analyze(file, os.Stdout, filter)
 }
 
-func Analyze(input io.Reader, output io.Writer) error {
+func Analyze(input io.Reader, output io.Writer, filter *TimeFilter) error {
 	report := &Report{
 		Bands:  make(map[string]int),
 		Towers: make(map[int]int),
 		Bars:   make(map[float64]int),
+		Filter: filter,
 	}
 	// Initialize Min values to avoid 0.0 bias
 	report.Ping.Min = math.MaxFloat64
@@ -80,7 +82,7 @@ func Analyze(input io.Reader, output io.Writer) error {
 	report.SINR.Min = 99
 
 	// Fetch raw data using the new exported parser
-	data, err := ParseLog(input)
+	data, err := ParseLog(input, filter)
 	if err != nil {
 		return err
 	}
@@ -136,7 +138,7 @@ func Analyze(input io.Reader, output io.Writer) error {
 
 // ParseLog reads the provided reader and returns a slice of CombinedStats.
 // It skips malformed lines.
-func ParseLog(r io.Reader) ([]models.CombinedStats, error) {
+func ParseLog(r io.Reader, filter *TimeFilter) ([]models.CombinedStats, error) {
 	var results []models.CombinedStats
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
@@ -144,6 +146,13 @@ func ParseLog(r io.Reader) ([]models.CombinedStats, error) {
 		if err := json.Unmarshal(scanner.Bytes(), &stats); err != nil {
 			continue // Skip malformed lines
 		}
+
+		// Filter by time
+		sampleTime := time.Unix(stats.Gateway.Time.LocalTime, 0)
+		if filter != nil && !filter.Contains(sampleTime) {
+			continue
+		}
+
 		results = append(results, stats)
 	}
 
@@ -165,7 +174,18 @@ func printReport(w io.Writer, r *Report) {
 	}
 
 	duration := r.EndTime.Sub(r.StartTime)
-	fmt.Fprintf(w, "Time Range:    %s to %s\n", r.StartTime.Format("2006-01-02 15:04:05"), r.EndTime.Format("15:04:05"))
+	if r.Filter != nil && (!r.Filter.Start.IsZero() || !r.Filter.End.IsZero()) {
+		startS := "Begin"
+		if !r.Filter.Start.IsZero() {
+			startS = r.Filter.Start.Format("2006-01-02 15:04:05")
+		}
+		endS := "End"
+		if !r.Filter.End.IsZero() {
+			endS = r.Filter.End.Format("2006-01-02 15:04:05")
+		}
+		fmt.Fprintf(w, "Filter:        %s to %s\n", startS, endS)
+	}
+	fmt.Fprintf(w, "Data Range:    %s to %s\n", r.StartTime.Format("2006-01-02 15:04:05"), r.EndTime.Format("15:04:05"))
 	fmt.Fprintf(w, "Duration:      %v\n", duration.Round(time.Second))
 	fmt.Fprintf(w, "Total Samples: %d\n", r.TotalSamples)
 	fmt.Fprintln(w)

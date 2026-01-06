@@ -157,13 +157,23 @@ func main() {
 func runAnalysis(args []string) {
 	fs := flag.NewFlagSet("analyze", flag.ExitOnError)
 	inputPtr := fs.String("input", "stats.log", "Path to log file to analyze")
+	startPtr := fs.String("start", "", "Start time (YYYY-MM-DD [HH:MM:SS])")
+	endPtr := fs.String("end", "", "End time (YYYY-MM-DD [HH:MM:SS])")
+	rangePtr := fs.Duration("range", 0, "Relative time range from now (e.g. 24h, 1h30m)")
+
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: signal-sentry analyze [flags]\n\n")
 		fs.PrintDefaults()
 	}
 	fs.Parse(args)
 
-	if err := analysis.Run(*inputPtr); err != nil {
+	filter, err := analysis.NewTimeFilter(*startPtr, *endPtr, *rangePtr)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err := analysis.Run(*inputPtr, filter); err != nil {
 		fmt.Fprintf(os.Stderr, "Analysis failed: %v\n", err)
 		os.Exit(1)
 	}
@@ -173,11 +183,21 @@ func runChart(args []string) {
 	fs := flag.NewFlagSet("chart", flag.ExitOnError)
 	inputPtr := fs.String("input", "stats.log", "Path to log file to analyze")
 	outputPtr := fs.String("output", "signal-analysis.png", "Path to save the chart image")
+	startPtr := fs.String("start", "", "Start time (YYYY-MM-DD [HH:MM:SS])")
+	endPtr := fs.String("end", "", "End time (YYYY-MM-DD [HH:MM:SS])")
+	rangePtr := fs.Duration("range", 0, "Relative time range from now (e.g. 24h, 1h30m)")
+
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: signal-sentry chart [flags]\n\n")
 		fs.PrintDefaults()
 	}
 	fs.Parse(args)
+
+	filter, err := analysis.NewTimeFilter(*startPtr, *endPtr, *rangePtr)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 
 	file, err := os.Open(*inputPtr)
 	if err != nil {
@@ -187,7 +207,7 @@ func runChart(args []string) {
 	defer file.Close()
 
 	fmt.Printf("Parsing log file: %s ...\n", *inputPtr)
-	data, err := analysis.ParseLog(file)
+	data, err := analysis.ParseLog(file, filter)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to parse log: %v\n", err)
 		os.Exit(1)
