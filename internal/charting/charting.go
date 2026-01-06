@@ -103,19 +103,78 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	pLoss.Add(lineLoss)
 	pLoss.Add(plotter.NewGrid())
 
+	// --- Band Plot ---
+	pBand := plot.New()
+	pBand.Title.Text = "5G Band"
+	pBand.X.Tick.Marker = timeTicks
+
+	// Custom Y Ticks for Bands
+	pBand.Y.Min = 0
+	pBand.Y.Max = 4
+	pBand.Y.Tick.Marker = plot.ConstantTicks([]plot.Tick{
+		{Value: 1, Label: "n71 (Range)"},
+		{Value: 2, Label: "n25 (Mid)"},
+		{Value: 3, Label: "n41 (Speed)"},
+	})
+
+	bandXYs := make(plotter.XYs, len(data))
+	for i, d := range data {
+		t := getTime(d.Gateway.Time.LocalTime)
+		bandXYs[i].X = t
+
+		// Map bands to levels
+		// Priority: n41 > n25 > n71
+		// If multiple bands are present, pick the "best" one to show the primary connection capability
+		level := 0.0 // No signal/Unknown
+
+		hasBand := func(target string) bool {
+			for _, b := range d.Gateway.Signal.FiveG.Bands {
+				if b == target {
+					return true
+				}
+			}
+			return false
+		}
+
+		if hasBand("n41") {
+			level = 3
+		} else if hasBand("n25") {
+			level = 2
+		} else if hasBand("n71") {
+			level = 1
+		}
+		bandXYs[i].Y = level
+	}
+
+	// Use points for bands to clearly see samples
+	scatterBand, _ := plotter.NewScatter(bandXYs)
+	scatterBand.GlyphStyle.Radius = vg.Points(3)
+	scatterBand.GlyphStyle.Shape = draw.CircleGlyph{}
+	scatterBand.Color = color.RGBA{R: 255, G: 165, B: 0, A: 255} // Orange
+
+	pBand.Add(scatterBand)
+	pBand.Add(plotter.NewGrid())
+
 	// Combine into a single image
 	const width = 10 * vg.Inch
-	const height = 12 * vg.Inch
+	const height = 16 * vg.Inch // Increased height for 4 rows
 
 	c := vgimg.NewWith(vgimg.UseWH(width, height), vgimg.UseBackgroundColor(color.White))
 	dc := draw.New(c)
 
-	// Layout: 3 rows, 1 column
+	// Layout: 4 rows, 1 column
+	// Row 1 (Top): Latency
+	// Row 2: Signal
+	// Row 3: Loss
+	// Row 4 (Bot): Bands
+
+	// Helper for row rectangles
+	rowHeight := height / 4
 
 	rectLat := draw.Canvas{
 		Canvas: dc,
 		Rectangle: vg.Rectangle{
-			Min: vg.Point{X: 0, Y: height * 2 / 3},
+			Min: vg.Point{X: 0, Y: rowHeight * 3},
 			Max: vg.Point{X: width, Y: height},
 		},
 	}
@@ -124,8 +183,8 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	rectSig := draw.Canvas{
 		Canvas: dc,
 		Rectangle: vg.Rectangle{
-			Min: vg.Point{X: 0, Y: height * 1 / 3},
-			Max: vg.Point{X: width, Y: height * 2 / 3},
+			Min: vg.Point{X: 0, Y: rowHeight * 2},
+			Max: vg.Point{X: width, Y: rowHeight * 3},
 		},
 	}
 	pH.Draw(rectSig)
@@ -133,11 +192,20 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	rectLoss := draw.Canvas{
 		Canvas: dc,
 		Rectangle: vg.Rectangle{
-			Min: vg.Point{X: 0, Y: 0},
-			Max: vg.Point{X: width, Y: height * 1 / 3},
+			Min: vg.Point{X: 0, Y: rowHeight * 1},
+			Max: vg.Point{X: width, Y: rowHeight * 2},
 		},
 	}
 	pLoss.Draw(rectLoss)
+
+	rectBand := draw.Canvas{
+		Canvas: dc,
+		Rectangle: vg.Rectangle{
+			Min: vg.Point{X: 0, Y: 0},
+			Max: vg.Point{X: width, Y: rowHeight},
+		},
+	}
+	pBand.Draw(rectBand)
 
 	// Save
 	f, err := os.Create(outputFile)
