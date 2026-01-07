@@ -75,14 +75,14 @@ func (p *Pinger) GetStatsAndReset() models.PingStats {
 
 	// Reset state for next window
 	p.stats = models.PingStats{
-		Min:     0,
-		Max:     0,
-		Avg:     0,
-		StdDev:  0,
-		Loss:    0,
-		Sent:    0,
+		Min:      0,
+		Max:      0,
+		Avg:      0,
+		StdDev:   0,
+		Loss:     0,
+		Sent:     0,
 		Received: 0,
-		LastRTT: currentStats.LastRTT, // Preserve LastRTT for continuity context if needed
+		LastRTT:  currentStats.LastRTT, // Preserve LastRTT for continuity context if needed
 	}
 	p.m2 = 0
 
@@ -99,9 +99,11 @@ func (p *Pinger) ping() {
 	}
 
 	pinger.Count = 1
-	pinger.Timeout = p.Interval // Wait at most the interval duration
-	
-	// On macOS, unprivileged ping might be needed if sudo is not used, 
+	// DECOUPLED TIMEOUT: Allow 2.5 seconds for the packet to return,
+	// even if our loop interval is 1s. This handles system jitter/spikes without false loss.
+	pinger.Timeout = 2500 * time.Millisecond
+
+	// On macOS, unprivileged ping might be needed if sudo is not used,
 	// but we will assume sudo per user request for "native" behavior.
 	// However, setting SetPrivileged(true) is safer for ICMP on most systems if running as root.
 	pinger.SetPrivileged(true)
@@ -125,7 +127,7 @@ func (p *Pinger) ping() {
 
 	// Success
 	rtt := float64(stats.AvgRtt.Milliseconds()) // stats.AvgRtt is the only RTT for Count=1
-	
+
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -139,10 +141,14 @@ func (p *Pinger) recordLoss() {
 
 	p.stats.Sent++
 	p.lifetime.Sent++
-	
+
 	// Recalc loss
-	p.stats.Loss = float64(p.stats.Sent-p.stats.Received) / float64(p.stats.Sent) * 100
-	p.lifetime.Loss = float64(p.lifetime.Sent-p.lifetime.Received) / float64(p.lifetime.Sent) * 100
+	if p.stats.Sent > 0 {
+		p.stats.Loss = float64(p.stats.Sent-p.stats.Received) / float64(p.stats.Sent) * 100
+	}
+	if p.lifetime.Sent > 0 {
+		p.lifetime.Loss = float64(p.lifetime.Sent-p.lifetime.Received) / float64(p.lifetime.Sent) * 100
+	}
 }
 
 func (p *Pinger) updateStats(s *models.PingStats, rtt float64, m2 *float64) {
@@ -151,19 +157,20 @@ func (p *Pinger) updateStats(s *models.PingStats, rtt float64, m2 *float64) {
 	s.LastRTT = rtt
 	s.Loss = float64(s.Sent-s.Received) / float64(s.Sent) * 100
 
-	if s.Min == 0 { // First successful sample in window/lifetime (logic from before)
-		// Note: Technically lifetime.Min shouldn't be reset to 0 unless we want to allow it. 
-		// But s.Min starts at 0. If it's 0, we take the value.
-		// Wait, if actual RTT is 0.0001, this check fails. But RTT is rarely exactly 0.
+	if s.Min == 0 {
 		s.Min = rtt
 		s.Max = rtt
 		s.Avg = rtt
 		s.StdDev = 0
 		*m2 = 0
 	} else {
-		if rtt < s.Min { s.Min = rtt }
-		if rtt > s.Max { s.Max = rtt }
-		
+		if rtt < s.Min {
+			s.Min = rtt
+		}
+		if rtt > s.Max {
+			s.Max = rtt
+		}
+
 		delta := rtt - s.Avg
 		s.Avg += delta / float64(s.Received)
 		delta2 := rtt - s.Avg

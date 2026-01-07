@@ -1,0 +1,7 @@
+{
+  "id": "ping_investigation_20260106",
+  "name": "Investigation: Ping Reliability & False Positives",
+  "description": "Investigate why the internal pinger reports packet loss (5-8 packets) when other network devices do not. Analyze logic for strict timeouts, privilege issues, or OS-specific quirks.",
+  "status": "todo",
+  "created": "2026-01-06"
+}
