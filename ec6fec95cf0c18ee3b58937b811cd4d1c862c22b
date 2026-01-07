@@ -1,0 +1,9 @@
+Task: Improve Logarithmic Axis Labels
+
+Summary:
+Improved the readability of the 'Latency & Packet Loss' chart by replacing scientific notation (e.g., 1e+01) with standard human-readable integers (e.g., 10, 100) on the logarithmic Y-axis.
+
+Details:
+- Implemented a custom 'logTicks' ticker that wraps 'plot.LogTicks'.
+- Formats label values using standard decimal representation instead of scientific notation.
+- Applied the custom ticker to the latency chart Y-axis.
