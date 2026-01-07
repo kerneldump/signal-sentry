@@ -5,6 +5,7 @@ Signal Sentry is a CLI tool designed to monitor and display real-time signal sta
 ## Key Features
 
 - **Interactive Live Dashboard:** A TUI (Text User Interface) with real-time graphs, color-coded metrics, and dynamic controls.
+- **Live Web Dashboard:** A lightweight local web server to view charts in your browser with selectable time ranges and auto-refresh.
 - **Native Ping Integration:** Monitors latency and packet loss alongside signal stats (requires `sudo`).
 - **Smart Historical Analysis:** Generate detailed reports with time-based filtering (`-range 24h`) and "Signal Health" scoring.
 - **Advanced Charting:** Creates high-resolution 2x2 grid charts visualizing Signal Strength, Latency, Bands, and Signal Bars vs Health. Automatically smooths data for long-term trends.
@@ -74,7 +75,15 @@ Create a visual graph of your signal history.
 ./tmobile-stats chart -start "2026-01-05 14:00:00" -end "2026-01-05 16:00:00"
 ```
 
-**4. Legacy/Scripting Mode**
+**4. Live Web Dashboard**
+View your signal charts in any web browser. This starts a local server that serves auto-refreshing charts.
+```bash
+./tmobile-stats web
+```
+*   **Access:** Open `http://localhost:8080` in your browser.
+*   **Features:** Toggle between 1h, 6h, 24h, or Max history views instantly.
+
+**5. Legacy/Scripting Mode**
 Run with standard standard output (useful for piping to other tools).
 ```bash
 sudo ./tmobile-stats -interval 2
@@ -101,8 +110,11 @@ sudo ./tmobile-stats -interval 2
   - `-input`: Path to the log file (default: `stats.log`).
   - `-output`: Path to save the chart image (default: `signal-analysis.png`).
   - `-range`, `-start`, `-end`: Same filtering options as `analyze`.
+- `web`: Start a local web server to view auto-refreshing signal charts.
+  - `-port`: Port to listen on (default: `8080`).
+  - `-input`: Path to the log file (default: `stats.log`).
 
-## Configuration
+### Configuration
 
 A `config.json` file can be used to set defaults. Example:
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	"image/png"
+	"io"
 	"os"
 
 	"gonum.org/v1/plot"
@@ -72,6 +73,16 @@ func downsample(data plotter.XYs, maxPoints int) plotter.XYs {
 
 // Generate creates a PNG chart from the provided stats and saves it to outputFile.
 func Generate(data []models.CombinedStats, outputFile string) error {
+	f, err := os.Create(outputFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return GenerateToWriter(data, f)
+}
+
+// GenerateToWriter creates a PNG chart from the provided stats and writes it to the provided writer.
+func GenerateToWriter(data []models.CombinedStats, w io.Writer) error {
 	if len(data) == 0 {
 		return fmt.Errorf("no data to chart")
 	}
@@ -182,16 +193,8 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	for t := range towerSet {
 		sortedTowers = append(sortedTowers, t)
 	}
-	// Sort helps keep consistent coloring/levels if we were coloring by tower,
-	// but here it keeps levels consistent.
-	// We need 'sort' package. But let's just use a simple bubble sort or similar if list is short,
-	// or import sort. Let's assume standard sort import is needed.
-	// Actually, Go 1.21+ has 'slices.Sort'. We are on 1.25.5.
-	// But let's check imports first. We don't have 'sort' imported.
-	// I will add it in a separate edit or assume I can add it here.
-	// I'll skip explicit sorting for now and just iterate the map to build a stable map? No, map iteration is random.
-	// I MUST sort to have stable levels.
-	// I will simple bubble sort it here since N is tiny (<10).
+	
+	// Simple Bubble Sort
 	for i := 0; i < len(sortedTowers); i++ {
 		for j := i + 1; j < len(sortedTowers); j++ {
 			if sortedTowers[i] > sortedTowers[j] {
@@ -432,15 +435,5 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	}
 	pBand.Draw(rectBand)
 
-	// Save
-	f, err := os.Create(outputFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	if err := png.Encode(f, c.Image()); err != nil {
-		return err
-	}
-	return nil
+	return png.Encode(w, c.Image())
 }

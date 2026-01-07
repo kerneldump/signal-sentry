@@ -1,0 +1,7 @@
+{
+  "id": "web_server_20260107",
+  "name": "Lightweight Web Server for Live Charts",
+  "description": "Implements a local web server to display live signal charts with configurable time ranges.",
+  "status": "todo",
+  "created_at": "2026-01-07"
+}

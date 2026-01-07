@@ -83,8 +83,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 ## [x] Track: Investigation: Ping Reliability & False Positives
 *Link: [./conductor/tracks/ping_investigation_20260106/](./conductor/tracks/ping_investigation_20260106/)*
 
-
-
-
-
-
+## [x] Track: Lightweight Web Server for Live Charts
+*Link: [./conductor/tracks/web_server_20260107/](./conductor/tracks/web_server_20260107/)*

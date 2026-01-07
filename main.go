@@ -17,6 +17,7 @@ import (
 	"tmobile-stats/internal/models"
 	"tmobile-stats/internal/pinger"
 	"tmobile-stats/internal/ui"
+	"tmobile-stats/internal/web"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -40,7 +41,7 @@ func main() {
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Signal Sentry - T-Mobile Gateway Signal Monitor (%s)\n\n", Version)
-		fmt.Fprintf(os.Stderr, "Usage:\n  signal-sentry [flags]\n  signal-sentry analyze [flags]\n\n")
+		fmt.Fprintf(os.Stderr, "Usage:\n  signal-sentry [flags]\n  signal-sentry analyze [flags]\n  signal-sentry chart [flags]\n  signal-sentry web [flags]\n\n")
 		fmt.Fprintf(os.Stderr, "Flags:\n")
 		flag.PrintDefaults()
 	}
@@ -55,6 +56,9 @@ func main() {
 			return
 		case "chart":
 			runChart(os.Args[2:])
+			return
+		case "web":
+			runWeb(os.Args[2:])
 			return
 		}
 	}
@@ -219,6 +223,23 @@ func runChart(args []string) {
 		os.Exit(1)
 	}
 	fmt.Println("Done!")
+}
+
+func runWeb(args []string) {
+	fs := flag.NewFlagSet("web", flag.ExitOnError)
+	portPtr := fs.Int("port", 8080, "Port to listen on")
+	inputPtr := fs.String("input", "stats.log", "Path to log file to analyze")
+
+	fs.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: signal-sentry web [flags]\n\n")
+		fs.PrintDefaults()
+	}
+	fs.Parse(args)
+
+	if err := web.Run(*portPtr, *inputPtr); err != nil {
+		fmt.Fprintf(os.Stderr, "Web server failed: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func runLegacyLoop(cfg *config.Config, client *http.Client, pg *pinger.Pinger, loggers []logger.Logger) {
