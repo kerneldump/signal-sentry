@@ -1,0 +1,13 @@
+Task: Documentation Update
+
+Summary:
+Updated README.md to reflect the significant new features added for Historical Analysis and Charting.
+
+Additions:
+- Documented new filtering flags (-range, -start, -end).
+- Explained the 'Signal Health' metric.
+- Described the new 2x2 Grid Chart layout and dynamic smoothing features.
+- Updated the sample output to show the new 'Filter', 'Data Range', and 'BARS AVG' sections.
+
+Files Modified:
+- README.md: Comprehensive update.
