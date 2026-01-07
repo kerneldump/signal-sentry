@@ -6,7 +6,8 @@ Signal Sentry is a CLI tool designed to monitor and display real-time signal sta
 
 - **Interactive Live Dashboard:** A TUI (Text User Interface) with real-time graphs, color-coded metrics, and dynamic controls.
 - **Native Ping Integration:** Monitors latency and packet loss alongside signal stats (requires `sudo`).
-- **Historical Analysis:** Analyze collected logs to generate summaries of signal quality, bands, and tower usage over time.
+- **Smart Historical Analysis:** Generate detailed reports with time-based filtering (`-range 24h`) and "Signal Health" scoring.
+- **Advanced Charting:** Creates high-resolution 2x2 grid charts visualizing Signal Strength, Latency, Bands, and Signal Bars vs Health. Automatically smooths data for long-term trends.
 - **Placement Optimization:** Instant feedback on signal changes to help identify the best spot for your gateway.
 - **Detailed Signal Metrics:** View information about 4G/5G bands, tower identification (gNBID/CID), RSRP, SINR, and more.
 - **Automatic Logging:** Silently records all data to `stats.log` for future analysis.
@@ -55,14 +56,22 @@ sudo ./tmobile-stats -live
 **2. Historical Analysis**
 Generate a report from your collected logs.
 ```bash
+# Analyze all data
 ./tmobile-stats analyze
+
+# Analyze last 24 hours
+./tmobile-stats analyze -range 24h
 ```
 *   *Note: You can run this in a separate terminal while the monitor is running.*
 
 **3. Generate Charts**
 Create a visual graph of your signal history.
 ```bash
-./tmobile-stats chart --input stats.log --output my-signal.png
+# Generate smoothed chart for long duration
+./tmobile-stats chart -input stats.log -output my-signal.png
+
+# Generate detailed chart for specific incident
+./tmobile-stats chart -start "2026-01-05 14:00:00" -end "2026-01-05 16:00:00"
 ```
 
 **4. Legacy/Scripting Mode**
@@ -85,9 +94,13 @@ sudo ./tmobile-stats -interval 2
 
 - `analyze`: Parse a log file and display summary statistics.
   - `-input`: Path to the log file (default: `stats.log`).
+  - `-range`: Relative time range from now (e.g., `24h`, `30m`).
+  - `-start`: Start date/time (format: `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`).
+  - `-end`: End date/time (format: `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`).
 - `chart`: Generate a PNG chart of RSRP and SINR over time from a log file.
   - `-input`: Path to the log file (default: `stats.log`).
   - `-output`: Path to save the chart image (default: `signal-analysis.png`).
+  - `-range`, `-start`, `-end`: Same filtering options as `analyze`.
 
 ## Configuration
 
@@ -118,21 +131,42 @@ SIGNAL METRICS GUIDE:
 ---------------------
 * BAND:  The frequency band in use.
          n41: High speed, shorter range (Ultra Capacity).
-         n25: Balanced speed and range.
-         n71: Long range, slower speeds.
+...
+```
 
-* RSRP:  (Reference Signal Received Power) Your main signal strength.
-         Excellent > -80  | Good -80 to -95
-         Fair -95 to -110 | Poor < -110 (Risk of drops).
+### Analysis Report Example
 
-* SINR:  (Signal-to-Interference-plus-Noise Ratio) Signal quality.
-         Higher is better. > 20 is excellent.
-         < 0 means high noise (your speed will suffer).
+```text
+================================================================================
+ HISTORICAL SIGNAL ANALYSIS
+================================================================================
+Filter:        2026-01-06 15:00:39 to 2026-01-06 16:00:39
+Data Range:    2026-01-06 15:00:41 to 16:00:31
+Duration:      59m50s
+Total Samples: 360
 
- TYPE  | BANDS      | BARS | RSRP  | SINR  | RSRQ | RSSI | CID   | TWR gNBID/PCIDE | MIN AVG MAX STD LOSS
--------+------------+------+-------+-------+------+------+-------+-----------------+-------------------------
-  5G   | n41        | 4.0  | -88   | 15    | -11  | -85  | 302   | 1870191         | 18.2 22.5 45.1 5.2 0.0%
-  5G   | n41        | 5.0  | -79   | 25    | -10  | -82  | 302   | 1870191         | 17.8 21.0 28.4 2.1 0.0%
+METRIC      MIN   AVG    MAX
+------      ---   ---    ---
+RSRP (dBm)  -104  -98.5  -95
+SINR (dB)   2     7.7    16
+Ping (ms)   18.0  32.5   561.0
+Loss (%)    -     0.0    -
+
+BANDS SEEN:
+  n41        360 samples (100.0%)
+
+TOWERS SEEN:
+  1870191    360 samples (100.0%) live
+
+BARS SEEN:
+  3          79 samples (21.9%)
+  4          281 samples (78.1%) real-time
+
+BARS AVG:
+Overall     3.8
+Last 1h     3.8
+SgnlHealth  3.7
+================================================================================
 ```
 
 ## Development
