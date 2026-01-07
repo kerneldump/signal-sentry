@@ -1,0 +1,12 @@
+Task: Logarithmic Scale for Latency Chart
+
+Summary:
+Switched the 'Latency & Packet Loss' chart to use a Logarithmic Y-axis. This prevents extreme outliers (high latency spikes or StdDev) from compressing the normal operating range data into a flat line.
+
+Details:
+- Applied 'plot.LogScale' to the Y-axis of the first chart.
+- Implemented data sanitization to ensure all plotted values are >= 0.1, as Log(0) is undefined.
+- Used 'plot.LogTicks' for improved readability of the logarithmic scale.
+
+Files Modified:
+- internal/charting/charting.go: Updated scale configuration and data loop.
