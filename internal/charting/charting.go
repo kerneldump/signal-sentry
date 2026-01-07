@@ -168,24 +168,55 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	pH.Legend.Add("SINR", lineSINR)
 	pH.Add(plotter.NewGrid())
 
-	// 3. 5G Band Plot
-	pBand := plot.New()
-	pBand.Title.Text = "5G Band"
-	pBand.X.Tick.Marker = timeTicks
-
-	// Custom Y Ticks for Bands
-	pBand.Y.Min = 0
-	pBand.Y.Max = 4
-	pBand.Y.Tick.Marker = plot.ConstantTicks([]plot.Tick{
-		{Value: 1, Label: "n71 (Range)"},
-		{Value: 2, Label: "n25 (Mid)"},
-		{Value: 3, Label: "n41 (Speed)"},
-	})
-
 	bandXYs := make(plotter.XYs, len(data))
+	towerXYs := make(plotter.XYs, len(data))
+
+	// Collect Unique Towers for Mapping
+	towerSet := make(map[int]bool)
+	for _, d := range data {
+		if d.Gateway.Signal.FiveG.GNBID > 0 {
+			towerSet[d.Gateway.Signal.FiveG.GNBID] = true
+		}
+	}
+	var sortedTowers []int
+	for t := range towerSet {
+		sortedTowers = append(sortedTowers, t)
+	}
+	// Sort helps keep consistent coloring/levels if we were coloring by tower,
+	// but here it keeps levels consistent.
+	// We need 'sort' package. But let's just use a simple bubble sort or similar if list is short,
+	// or import sort. Let's assume standard sort import is needed.
+	// Actually, Go 1.21+ has 'slices.Sort'. We are on 1.25.5.
+	// But let's check imports first. We don't have 'sort' imported.
+	// I will add it in a separate edit or assume I can add it here.
+	// I'll skip explicit sorting for now and just iterate the map to build a stable map? No, map iteration is random.
+	// I MUST sort to have stable levels.
+	// I will simple bubble sort it here since N is tiny (<10).
+	for i := 0; i < len(sortedTowers); i++ {
+		for j := i + 1; j < len(sortedTowers); j++ {
+			if sortedTowers[i] > sortedTowers[j] {
+				sortedTowers[i], sortedTowers[j] = sortedTowers[j], sortedTowers[i]
+			}
+		}
+	}
+
+	getTowerY := func(gnbid int) float64 {
+		if gnbid == 0 {
+			return 0
+		}
+		for i, t := range sortedTowers {
+			if t == gnbid {
+				// Bands are 1, 2, 3. Leave 4 empty. Start Towers at 5.
+				return float64(i + 5)
+			}
+		}
+		return 0
+	}
+
 	for i, d := range data {
 		t := getTime(d.Gateway.Time.LocalTime)
 		bandXYs[i].X = t
+		towerXYs[i].X = t
 
 		// Map bands to levels
 		// Priority: n41 > n25 > n71
@@ -207,13 +238,55 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 			level = 1
 		}
 		bandXYs[i].Y = level
+
+		// Map Towers
+		towerXYs[i].Y = getTowerY(d.Gateway.Signal.FiveG.GNBID)
+	}
+
+	// Apply Smoothing to Towers if "All" smoothing is active
+	// (Same trigger as Bands)
+	if len(data) > 1 {
+		startTime := data[0].Gateway.Time.LocalTime
+		endTime := data[len(data)-1].Gateway.Time.LocalTime
+		duration := float64(endTime - startTime)
+		
+		if duration > 86400 && len(towerXYs) > 600 {
+			towerXYs = downsample(towerXYs, 600)
+		}
 	}
 
 	lineBand, _ := plotter.NewLine(bandXYs)
 	lineBand.StepStyle = plotter.PreStep
 	lineBand.Color = color.RGBA{R: 255, G: 165, B: 0, A: 255} // Orange
 
-	pBand.Add(lineBand)
+	lineTower, _ := plotter.NewLine(towerXYs)
+	lineTower.StepStyle = plotter.PreStep
+	lineTower.Color = color.RGBA{R: 255, G: 0, B: 255, A: 255} // Magenta
+
+	// 3. 5G Band & Tower Plot
+	pBand := plot.New()
+	pBand.Title.Text = "Connection Info / Tower & Radio Bands"
+	pBand.X.Tick.Marker = timeTicks
+
+	// Custom Y Ticks for Bands & Towers
+	// Min = 0, Max = 5 + len(towers)
+	pBand.Y.Min = 0
+	pBand.Y.Max = float64(5 + len(sortedTowers))
+	
+	ticks := []plot.Tick{
+		{Value: 1, Label: "n71"},
+		{Value: 2, Label: "n25"},
+		{Value: 3, Label: "n41"},
+	}
+	for i, tID := range sortedTowers {
+		ticks = append(ticks, plot.Tick{
+			Value: float64(i + 5),
+			Label: fmt.Sprintf("%d", tID),
+		})
+	}
+	pBand.Y.Tick.Marker = plot.ConstantTicks(ticks)
+
+	pBand.Add(lineBand, lineTower)
 	pBand.Add(plotter.NewGrid())
 
 	// 4. Signal Bars Plot (New)

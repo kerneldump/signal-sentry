@@ -77,6 +77,9 @@ This file tracks all major tracks for the project. Each track has its own detail
 ## [x] Track: Improve Logarithmic Axis Labels
 *Link: [./conductor/tracks/log_axis_labels_20260106/](./conductor/tracks/log_axis_labels_20260106/)*
 
+## [x] Track: Add Tower ID to Connection Chart
+*Link: [./conductor/tracks/chart_towers_20260106/](./conductor/tracks/chart_towers_20260106/)*
+
 
 
 

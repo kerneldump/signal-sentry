@@ -1,0 +1,7 @@
+{
+  "id": "chart_towers_20260106",
+  "name": "Add Tower ID to Connection Chart",
+  "description": "Combine Tower ID history with the 5G Band chart to visualize tower hopping and band changes in a single view.",
+  "status": "completed",
+  "created": "2026-01-06"
+}
