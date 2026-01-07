@@ -17,4 +17,4 @@
 ## Phase 4: Integration & Polish
 - [x] Task: Wire up handlers in `main.go` and start `http.ListenAndServe`. [Implementation complete]
 - [x] Task: Add auto-refresh (meta tag or JS) to the HTML. [Implementation complete]
-- [x] Task: Verify: Run `signal-sentry web` and test in browser. [Verified via curl]
+- [x] Task: Verify: Run `signal-sentry web` and test in browser. [Verified via curl] [checkpoint: 06adec7]
