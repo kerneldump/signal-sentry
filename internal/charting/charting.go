@@ -16,6 +16,20 @@ import (
 	"tmobile-stats/internal/models"
 )
 
+// logTicks is a custom ticker for logarithmic scales that formats labels as integers.
+type logTicks struct{}
+
+func (logTicks) Ticks(min, max float64) []plot.Tick {
+	ticks := plot.LogTicks{}.Ticks(min, max)
+	for i := range ticks {
+		if ticks[i].Label != "" {
+			// Format as standard decimal/integer
+			ticks[i].Label = fmt.Sprintf("%g", ticks[i].Value)
+		}
+	}
+	return ticks
+}
+
 // downsample reduces the resolution of the data by averaging points into buckets.
 func downsample(data plotter.XYs, maxPoints int) plotter.XYs {
 	if len(data) <= maxPoints {
@@ -119,7 +133,7 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	pLat.Y.Label.Text = "ms / %"
 	pLat.X.Tick.Marker = timeTicks
 	pLat.Y.Scale = plot.LogScale{}
-	pLat.Y.Tick.Marker = plot.LogTicks{}
+	pLat.Y.Tick.Marker = logTicks{}
 
 	lineLat, _ := plotter.NewLine(latencyXYs)
 	lineLat.Color = color.RGBA{R: 0, G: 0, B: 255, A: 255} // Blue

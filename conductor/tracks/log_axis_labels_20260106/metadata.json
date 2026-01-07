@@ -1,0 +1,7 @@
+{
+  "id": "log_axis_labels_20260106",
+  "name": "Improve Logarithmic Axis Labels",
+  "description": "Replace scientific notation with human-readable integer labels on the logarithmic Y-axis of the Latency chart.",
+  "status": "completed",
+  "created": "2026-01-06"
+}
