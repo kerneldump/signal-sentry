@@ -77,11 +77,25 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	for i, d := range data {
 		t := getTime(d.Gateway.Time.LocalTime)
 
+		// Sanitize for Log Scale (must be > 0)
+		avg := d.Ping.Avg
+		if avg <= 0 {
+			avg = 0.1
+		}
+		sd := d.Ping.StdDev
+		if sd <= 0 {
+			sd = 0.1
+		}
+		loss := d.Ping.Loss
+		if loss <= 0 {
+			loss = 0.1
+		}
+
 		latencyXYs[i].X = t
-		latencyXYs[i].Y = d.Ping.Avg
+		latencyXYs[i].Y = avg
 
 		stdDevXYs[i].X = t
-		stdDevXYs[i].Y = d.Ping.StdDev
+		stdDevXYs[i].Y = sd
 
 		rsrpXYs[i].X = t
 		rsrpXYs[i].Y = float64(d.Gateway.Signal.FiveG.RSRP)
@@ -90,7 +104,7 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 		sinrXYs[i].Y = float64(d.Gateway.Signal.FiveG.SINR)
 
 		lossXYs[i].X = t
-		lossXYs[i].Y = d.Ping.Loss
+		lossXYs[i].Y = loss
 	}
 
 	// Common Time Ticker
@@ -104,6 +118,8 @@ func Generate(data []models.CombinedStats, outputFile string) error {
 	pLat.Title.Text = "Latency & Packet Loss"
 	pLat.Y.Label.Text = "ms / %"
 	pLat.X.Tick.Marker = timeTicks
+	pLat.Y.Scale = plot.LogScale{}
+	pLat.Y.Tick.Marker = plot.LogTicks{}
 
 	lineLat, _ := plotter.NewLine(latencyXYs)
 	lineLat.Color = color.RGBA{R: 0, G: 0, B: 255, A: 255} // Blue

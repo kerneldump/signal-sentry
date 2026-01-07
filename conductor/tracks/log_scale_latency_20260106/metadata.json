@@ -1,0 +1,7 @@
+{
+  "id": "log_scale_latency_20260106",
+  "name": "Logarithmic Scale for Latency Chart",
+  "description": "Switch the Latency & Packet Loss chart to use a Logarithmic Y-axis to prevent outliers from compressing normal data.",
+  "status": "completed",
+  "created": "2026-01-06"
+}

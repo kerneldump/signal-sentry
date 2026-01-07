@@ -71,6 +71,9 @@ This file tracks all major tracks for the project. Each track has its own detail
 ## [x] Track: Documentation Update for Analysis & Charting
 *Link: [./conductor/tracks/docs_update_20260106/](./conductor/tracks/docs_update_20260106/)*
 
+## [x] Track: Logarithmic Scale for Latency Chart
+*Link: [./conductor/tracks/log_scale_latency_20260106/](./conductor/tracks/log_scale_latency_20260106/)*
+
 
 
 
