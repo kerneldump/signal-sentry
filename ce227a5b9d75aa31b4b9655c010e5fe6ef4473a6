@@ -1,0 +1,14 @@
+Task: Add Tower ID to Connection Chart
+
+Summary:
+Enhanced the charting engine to visualize Tower ID history alongside 5G Band changes in a single combined chart.
+
+Details:
+- Renamed the '5G Band' chart to 'Connection Info / Tower & Radio Bands'.
+- Implemented dynamic mapping of unique Tower IDs (GNBID) to distinct Y-axis levels.
+- Added a Magenta step-line series representing the Tower ID history.
+- Updated Y-axis ticks to display human-readable labels for both bands (n71, n25, n41) and actual Tower IDs.
+- Applied the same tiered smoothing logic to the tower series for long-duration reports.
+
+Files Modified:
+- internal/charting/charting.go: Major refactor of the connection info plot logic.
