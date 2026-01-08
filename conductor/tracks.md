@@ -85,3 +85,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## [x] Track: Lightweight Web Server for Live Charts
 *Link: [./conductor/tracks/web_server_20260107/](./conductor/tracks/web_server_20260107/)*
+
+## [x] Track: Add Granular Time Ranges to Web UI
+*Link: [./conductor/tracks/web_time_ranges_20260107/](./conductor/tracks/web_time_ranges_20260107/)*
