@@ -162,22 +162,33 @@ func GenerateToWriter(data []models.CombinedStats, w io.Writer) error {
 	pLat.Legend.Add("Loss (%)", lineLoss)
 	pLat.Add(plotter.NewGrid())
 
-	// 2. Signal Strength
-	pH := plot.New()
-	pH.Title.Text = "Signal Strength"
-	pH.Y.Label.Text = "dBm / dB"
-	pH.X.Tick.Marker = timeTicks
-
-	lineRSRP, _ := plotter.NewLine(rsrpXYs)
-	lineRSRP.Color = color.RGBA{R: 255, G: 0, B: 0, A: 255} // Red
+	// 2. Signal Strength (Split)
+	// 2a. SINR (Top)
+	pSINR := plot.New()
+	pSINR.Title.Text = "Signal Strength (SINR / RSRP)"
+	pSINR.Y.Label.Text = "SINR (dB)"
+	pSINR.X.Tick.Marker = timeTicks
+	pSINR.X.Tick.Label.Color = color.Transparent // Hide labels, keep spacing
 
 	lineSINR, _ := plotter.NewLine(sinrXYs)
 	lineSINR.Color = color.RGBA{R: 0, G: 255, B: 0, A: 255} // Green
 
-	pH.Add(lineRSRP, lineSINR)
-	pH.Legend.Add("RSRP", lineRSRP)
-	pH.Legend.Add("SINR", lineSINR)
-	pH.Add(plotter.NewGrid())
+	pSINR.Add(lineSINR)
+	pSINR.Legend.Add("SINR", lineSINR)
+	pSINR.Add(plotter.NewGrid())
+
+	// 2b. RSRP (Bottom)
+	pRSRP := plot.New()
+	// No title for bottom plot
+	pRSRP.Y.Label.Text = "RSRP (dBm)"
+	pRSRP.X.Tick.Marker = timeTicks
+
+	lineRSRP, _ := plotter.NewLine(rsrpXYs)
+	lineRSRP.Color = color.RGBA{R: 255, G: 0, B: 0, A: 255} // Red
+
+	pRSRP.Add(lineRSRP)
+	pRSRP.Legend.Add("RSRP", lineRSRP)
+	pRSRP.Add(plotter.NewGrid())
 
 	bandXYs := make(plotter.XYs, len(data))
 	towerXYs := make(plotter.XYs, len(data))
@@ -405,15 +416,27 @@ func GenerateToWriter(data []models.CombinedStats, w io.Writer) error {
 	}
 	pLat.Draw(rectLat)
 
-	// 2. Signal Strength (Top Right)
-	rectSig := draw.Canvas{
+	// 2. Signal Strength (Top Right - Split)
+	// SINR (Top half of Top Right)
+	// Quadrant Height = rowHeight. Split at rowHeight + (rowHeight/2).
+	rectSINR := draw.Canvas{
 		Canvas: dc,
 		Rectangle: vg.Rectangle{
-			Min: vg.Point{X: colWidth, Y: rowHeight},
+			Min: vg.Point{X: colWidth, Y: rowHeight + (rowHeight / 2)},
 			Max: vg.Point{X: width, Y: height},
 		},
 	}
-	pH.Draw(rectSig)
+	pSINR.Draw(rectSINR)
+
+	// RSRP (Bottom half of Top Right)
+	rectRSRP := draw.Canvas{
+		Canvas: dc,
+		Rectangle: vg.Rectangle{
+			Min: vg.Point{X: colWidth, Y: rowHeight},
+			Max: vg.Point{X: width, Y: rowHeight + (rowHeight / 2)},
+		},
+	}
+	pRSRP.Draw(rectRSRP)
 
 	// 3. Bars (Bottom Left)
 	rectBars := draw.Canvas{
