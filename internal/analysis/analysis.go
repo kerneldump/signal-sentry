@@ -249,6 +249,10 @@ func printReport(w io.Writer, r *Report) {
 	fmt.Fprintf(tw, "Loss (%%)\t-\t%.1f\t-\n", globalLoss)
 	tw.Flush()
 
+	if r.TotalPingSent > 0 {
+		fmt.Fprintf(w, "Total Packets Lost: %d / %d (%.2f%%)\n", r.TotalPingLost, r.TotalPingSent, globalLoss)
+	}
+
 	fmt.Fprintln(w, "\nBANDS SEEN:")
 	printMap(w, r.Bands, r.TotalSamples)
 
