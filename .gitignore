@@ -21,3 +21,4 @@ coverage.txt
 stats.log
 *.png
 misclogs/
+web.log
