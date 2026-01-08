@@ -72,23 +72,25 @@ type PageData struct {
 	LastUpdated  string
 }
 
-func Run(port int, logFile string) error {
+func Run(port int, logFile string, quiet bool) error {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		handleIndex(w, r)
+		handleIndex(w, r, quiet)
 	})
 
 	mux.HandleFunc("/chart.png", func(w http.ResponseWriter, r *http.Request) {
-		handleChart(w, r, logFile)
+		handleChart(w, r, logFile, quiet)
 	})
 
 	addr := fmt.Sprintf(":%d", port)
-	log.Printf("Starting web server on http://localhost%s (Input: %s)", addr, logFile)
+	if !quiet {
+		log.Printf("Starting web server on http://localhost%s (Input: %s)", addr, logFile)
+	}
 	return http.ListenAndServe(addr, mux)
 }
 
-func handleIndex(w http.ResponseWriter, r *http.Request) {
+func handleIndex(w http.ResponseWriter, r *http.Request, quiet bool) {
 	currentRange := r.URL.Query().Get("range")
 	if currentRange == "" {
 		currentRange = "24h"
@@ -142,11 +144,13 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html")
 	if err := tmpl.Execute(w, data); err != nil {
-		log.Printf("Error executing template: %v", err)
+		if !quiet {
+			log.Printf("Error executing template: %v", err)
+		}
 	}
 }
 
-func handleChart(w http.ResponseWriter, r *http.Request, logFile string) {
+func handleChart(w http.ResponseWriter, r *http.Request, logFile string, quiet bool) {
 	rangeStr := r.URL.Query().Get("range")
 	
 	// Default to 24h if missing
@@ -195,7 +199,9 @@ func handleChart(w http.ResponseWriter, r *http.Request, logFile string) {
 
 	w.Header().Set("Content-Type", "image/png")
 	if err := charting.GenerateToWriter(data, w); err != nil {
-		log.Printf("Error generating chart: %v", err)
+		if !quiet {
+			log.Printf("Error generating chart: %v", err)
+		}
 		// Can't really write http.Error here if we started writing the image...
 		// But GenerateToWriter should fail fast.
 	}

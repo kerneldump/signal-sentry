@@ -88,3 +88,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## [x] Track: Add Granular Time Ranges to Web UI
 *Link: [./conductor/tracks/web_time_ranges_20260107/](./conductor/tracks/web_time_ranges_20260107/)*
+
+## [x] Track: Unified Run Mode (TUI + Web)
+*Link: [./conductor/tracks/unified_run_mode_20260107/](./conductor/tracks/unified_run_mode_20260107/)*

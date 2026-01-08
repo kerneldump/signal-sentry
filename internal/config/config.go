@@ -15,6 +15,8 @@ type Config struct {
 	Output          string `json:"output"`
 	LiveMode        bool   `json:"live_mode"`        // Future proofing for Track 1
 	DisableAutoLog  bool   `json:"disable_auto_log"` // Disables the always-on stats.log
+	WebEnabled      bool   `json:"web_enabled"`      // Unified Run Mode
+	WebPort         int    `json:"web_port"`         // Unified Run Mode
 }
 
 // DefaultConfig returns a configuration with sensible defaults.
@@ -23,6 +25,7 @@ func DefaultConfig() *Config {
 		RouterURL:       "http://192.168.12.1/TMI/v1/gateway?get=all",
 		PingTarget:      "8.8.8.8",
 		RefreshInterval: 5,
+		WebPort:         8080,
 	}
 }
 

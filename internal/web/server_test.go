@@ -14,7 +14,9 @@ func TestHandleIndex(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(handleIndex)
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handleIndex(w, r, true)
+	})
 
 	handler.ServeHTTP(rr, req)
 

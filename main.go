@@ -38,6 +38,8 @@ func main() {
 	versionFlag := flag.Bool("version", false, "Show version information")
 	liveFlag := flag.Bool("live", false, "Enable interactive live view")
 	noAutoLogFlag := flag.Bool("no-auto-log", false, "Disable automatic logging to stats.log")
+	webFlag := flag.Bool("web", false, "Enable background web server (Unified Mode)")
+	webPortFlag := flag.Int("web-port", 8080, "Port for background web server")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Signal Sentry - T-Mobile Gateway Signal Monitor (%s)\n\n", Version)
@@ -88,6 +90,10 @@ func main() {
 			cfg.LiveMode = *liveFlag
 		case "no-auto-log":
 			cfg.DisableAutoLog = *noAutoLogFlag
+		case "web":
+			cfg.WebEnabled = *webFlag
+		case "web-port":
+			cfg.WebPort = *webPortFlag
 		}
 	})
 
@@ -146,7 +152,34 @@ func main() {
 
 	client := &http.Client{Timeout: 2 * time.Second}
 
-	// 6. Branch Execution
+	// 6. Start Web Server (Unified Mode)
+	if cfg.WebEnabled {
+		// Use stats.log as input, or cfg.Output if set and auto-log is disabled (edge case)
+		// For consistency, we always prefer stats.log for the web view unless it's disabled.
+		inputLog := "stats.log"
+		if cfg.DisableAutoLog && cfg.Output != "" {
+			inputLog = cfg.Output
+		}
+		
+		// If we are not in live mode, we can print a startup message.
+		// If we are in live mode, we must be quiet.
+		quiet := cfg.LiveMode
+		if !quiet {
+			fmt.Printf("Starting background web server on port %d (reading %s)...\n", cfg.WebPort, inputLog)
+		}
+
+		go func() {
+			if err := web.Run(cfg.WebPort, inputLog, quiet); err != nil {
+				// If quiet, we can't really log this without breaking TUI. 
+				// Maybe write to a file? For now, we swallow the error in TUI mode.
+				if !quiet {
+					fmt.Fprintf(os.Stderr, "Web server error: %v\n", err)
+				}
+			}
+		}()
+	}
+
+	// 7. Branch Execution
 	if cfg.LiveMode {
 		p := tea.NewProgram(ui.NewModel(cfg, client, pg, loggers), tea.WithAltScreen())
 		if _, err := p.Run(); err != nil {
@@ -236,7 +269,7 @@ func runWeb(args []string) {
 	}
 	fs.Parse(args)
 
-	if err := web.Run(*portPtr, *inputPtr); err != nil {
+	if err := web.Run(*portPtr, *inputPtr, false); err != nil {
 		fmt.Fprintf(os.Stderr, "Web server failed: %v\n", err)
 		os.Exit(1)
 	}
