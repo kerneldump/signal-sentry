@@ -1,6 +1,6 @@
 {
   "router_url": "http://192.168.12.1/TMI/v1/gateway?get=all",
-  "ping_target": "1.1.1.1",
+  "ping_target": "2606:4700:4700::1111",
   "refresh_interval": 10,
   "disable_auto_log": false
 }

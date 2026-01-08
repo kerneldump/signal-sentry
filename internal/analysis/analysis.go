@@ -241,16 +241,12 @@ func printReport(w io.Writer, r *Report) {
 		pMin = 0
 	}
 	fmt.Fprintf(tw, "Ping (ms)\t%.1f\t%.1f\t%.1f\n", pMin, r.Ping.Avg(), r.Ping.Max)
-
-	globalLoss := 0.0
-	if r.TotalPingSent > 0 {
-		globalLoss = float64(r.TotalPingLost) / float64(r.TotalPingSent) * 100
-	}
-	fmt.Fprintf(tw, "Loss (%%)\t-\t%.1f\t-\n", globalLoss)
 	tw.Flush()
 
 	if r.TotalPingSent > 0 {
-		fmt.Fprintf(w, "Total Packets Lost: %d / %d (%.2f%%)\n", r.TotalPingLost, r.TotalPingSent, globalLoss)
+		globalLoss := float64(r.TotalPingLost) / float64(r.TotalPingSent) * 100
+		fmt.Fprintf(w, "\nRELIABILITY:\n")
+		fmt.Fprintf(w, "  Packet Loss: %d / %d (%.2f%%)\n", r.TotalPingLost, r.TotalPingSent, globalLoss)
 	}
 
 	fmt.Fprintln(w, "\nBANDS SEEN:")
