@@ -250,13 +250,13 @@ func printReport(w io.Writer, r *Report) {
 	}
 
 	fmt.Fprintln(w, "\nBANDS SEEN:")
-	printMap(w, r.Bands, r.TotalSamples)
+	printMap(w, r.Bands, r.TotalSamples, duration)
 
 	fmt.Fprintln(w, "\nTOWERS SEEN:")
-	printTowerMap(w, r.Towers, r.TotalSamples, r.LastTowerID)
+	printTowerMap(w, r.Towers, r.TotalSamples, r.LastTowerID, duration)
 
 	fmt.Fprintln(w, "\nBARS SEEN:")
-	printFloatMap(w, r.Bars, r.TotalSamples, r.LastBars)
+	printFloatMap(w, r.Bars, r.TotalSamples, r.LastBars, duration)
 
 	fmt.Fprintln(w, "\nBARS AVG:")
 	tw2 := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
@@ -270,49 +270,84 @@ func printReport(w io.Writer, r *Report) {
 	fmt.Fprintln(w, "================================================================================")
 }
 
-func printMap(w io.Writer, m map[string]int, total int) {
+func printMap(w io.Writer, m map[string]int, total int, totalDuration time.Duration) {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
+
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	for _, k := range keys {
-		pct := float64(m[k]) / float64(total) * 100
-		fmt.Fprintf(w, "  %-10s %d samples (%.1f%%)\n", k, m[k], pct)
+		count := m[k]
+		pct := float64(count) / float64(total) * 100
+		dur := time.Duration(float64(totalDuration) * (float64(count) / float64(total)))
+		fmt.Fprintf(tw, "  %s\t%d samples (%.1f%%)\t%s\n", k, count, pct, formatSmartDuration(dur))
 	}
+	tw.Flush()
 }
 
-func printTowerMap(w io.Writer, m map[int]int, total int, liveTowerID int) {
+func printTowerMap(w io.Writer, m map[int]int, total int, liveTowerID int, totalDuration time.Duration) {
 	keys := make([]int, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
 	sort.Ints(keys)
+
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	for _, k := range keys {
-		pct := float64(m[k]) / float64(total) * 100
+		count := m[k]
+		pct := float64(count) / float64(total) * 100
 		suffix := ""
 		if k == liveTowerID {
 			suffix = " live"
 		}
-		fmt.Fprintf(w, "  %-10d %d samples (%.1f%%)%s\n", k, m[k], pct, suffix)
+		dur := time.Duration(float64(totalDuration) * (float64(count) / float64(total)))
+		fmt.Fprintf(tw, "  %d\t%d samples (%.1f%%)%s\t%s\n", k, count, pct, suffix, formatSmartDuration(dur))
 	}
+	tw.Flush()
 }
 
-func printFloatMap(w io.Writer, m map[float64]int, total int, realTimeVal float64) {
+func printFloatMap(w io.Writer, m map[float64]int, total int, realTimeVal float64, totalDuration time.Duration) {
 	keys := make([]float64, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
 	sort.Float64s(keys)
+
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	for _, k := range keys {
-		pct := float64(m[k]) / float64(total) * 100
+		count := m[k]
+		pct := float64(count) / float64(total) * 100
 		suffix := ""
 		if k == realTimeVal {
 			suffix = " real-time"
 		}
-		// Print typical bar values (3, 4) without decimals if possible, but they are floats
-		// so using %g or %.0f might be cleaner if they are integers.
-		// However, user output shows "3" and "4". Let's use %g for general output which strips trailing zeros.
-		fmt.Fprintf(w, "  %-10g %d samples (%.1f%%)%s\n", k, m[k], pct, suffix)
+		dur := time.Duration(float64(totalDuration) * (float64(count) / float64(total)))
+		fmt.Fprintf(tw, "  %g\t%d samples (%.1f%%)%s\t%s\n", k, count, pct, suffix, formatSmartDuration(dur))
 	}
+	tw.Flush()
+}
+
+func formatSmartDuration(d time.Duration) string {
+	d = d.Round(time.Second)
+	h := d / time.Hour
+	d -= h * time.Hour
+	m := d / time.Minute
+	d -= m * time.Minute
+	s := d / time.Second
+
+	if h > 0 {
+		if m > 0 {
+			return fmt.Sprintf("%dh %dm", h, m)
+		}
+		return fmt.Sprintf("%dh", h)
+	}
+	if m > 0 {
+		if s > 0 && m < 10 { // Only show seconds if minutes are low count
+			return fmt.Sprintf("%dm %ds", m, s)
+		}
+		return fmt.Sprintf("%dm", m)
+	}
+	return fmt.Sprintf("%ds", s)
 }
