@@ -150,8 +150,8 @@ func GenerateToWriter(data []models.CombinedStats, w io.Writer) error {
 	lineLat.Color = color.RGBA{R: 0, G: 0, B: 255, A: 255} // Blue
 
 	lineStd, _ := plotter.NewLine(stdDevXYs)
-	lineStd.Color = color.RGBA{R: 0, G: 255, B: 255, A: 255}           // Cyan
-	lineStd.LineStyle.Dashes = []vg.Length{vg.Points(5), vg.Points(5)} // Dashed
+	lineStd.Color = color.RGBA{R: 255, G: 140, B: 0, A: 255} // Dark Orange
+	// Solid line (default)
 
 	lineLoss, _ := plotter.NewLine(lossXYs)
 	lineLoss.Color = color.RGBA{R: 0, G: 0, B: 0, A: 255} // Black
