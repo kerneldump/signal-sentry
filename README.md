@@ -39,7 +39,7 @@ Signal Sentry is a CLI tool designed to monitor and display real-time signal sta
 Run the tool using the compiled binary. **Note: `sudo` is required for ping statistics.**
 
 ```bash
-sudo ./tmobile-stats [flags] [subcommand]
+sudo ./signal-sentry [flags] [subcommand]
 ```
 
 ### Common Workflows
@@ -47,7 +47,7 @@ sudo ./tmobile-stats [flags] [subcommand]
 **1. Live Monitoring (Recommended)**
 Start the interactive TUI dashboard. This will also log data to `stats.log` in the background.
 ```bash
-sudo ./tmobile-stats -live
+sudo ./signal-sentry -live
 ```
 *   **Controls:**
     *   `+` / `-`: Increase/Decrease refresh interval.
@@ -58,10 +58,10 @@ sudo ./tmobile-stats -live
 Generate a report from your collected logs.
 ```bash
 # Analyze all data
-./tmobile-stats analyze
+./signal-sentry analyze
 
 # Analyze last 24 hours
-./tmobile-stats analyze -range 24h
+./signal-sentry analyze -range 24h
 ```
 *   *Note: You can run this in a separate terminal while the monitor is running.*
 
@@ -69,16 +69,16 @@ Generate a report from your collected logs.
 Create a visual graph of your signal history.
 ```bash
 # Generate smoothed chart for long duration
-./tmobile-stats chart -input stats.log -output my-signal.png
+./signal-sentry chart -input stats.log -output my-signal.png
 
 # Generate detailed chart for specific incident
-./tmobile-stats chart -start "2026-01-05 14:00:00" -end "2026-01-05 16:00:00"
+./signal-sentry chart -start "2026-01-05 14:00:00" -end "2026-01-05 16:00:00"
 ```
 
 **4. Live Web Dashboard**
 View your signal charts in any web browser. This starts a local server that serves auto-refreshing charts.
 ```bash
-./tmobile-stats web
+./signal-sentry web
 ```
 *   **Access:** Open `http://localhost:8080` in your browser.
 *   **Features:** Toggle between 1h, 6h, 24h, or Max history views instantly.
@@ -86,7 +86,7 @@ View your signal charts in any web browser. This starts a local server that serv
 **5. Legacy/Scripting Mode**
 Run with standard standard output (useful for piping to other tools).
 ```bash
-sudo ./tmobile-stats -interval 2
+sudo ./signal-sentry -interval 2
 ```
 
 ### Flags
@@ -162,17 +162,19 @@ METRIC      MIN   AVG    MAX
 RSRP (dBm)  -104  -98.5  -95
 SINR (dB)   2     7.7    16
 Ping (ms)   18.0  32.5   561.0
-Loss (%)    -     0.0    -
+
+RELIABILITY:
+  Packet Loss: 0 / 360 (0.00%)
 
 BANDS SEEN:
-  n41        360 samples (100.0%)
+  n41        360 samples (100.0%)    59m 50s
 
 TOWERS SEEN:
-  1870191    360 samples (100.0%) live
+  1870191    360 samples (100.0%) live    59m 50s
 
 BARS SEEN:
-  3          79 samples (21.9%)
-  4          281 samples (78.1%) real-time
+  3          79 samples (21.9%)    13m 6s
+  4          281 samples (78.1%) real-time    46m 44s
 
 BARS AVG:
 Overall     3.8
