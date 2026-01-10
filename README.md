@@ -2,6 +2,8 @@
 
 Signal Sentry is a CLI tool designed to monitor and display real-time signal statistics from a T-Mobile Home Internet gateway. It helps users optimize their gateway placement, monitor connection stability, and analyze historical performance.
 
+![Signal Sentry Charts](docs/charts.png)
+
 ## Key Features
 
 - **Interactive Live Dashboard:** A TUI (Text User Interface) with real-time graphs, color-coded metrics, and dynamic controls.
@@ -129,6 +131,12 @@ A `config.json` file can be used to set defaults. Example:
   "disable_auto_log": false
 }
 ```
+
+## Charts Preview
+
+The tool generates detailed high-resolution charts for historical analysis.
+
+![Signal Analysis Chart](docs/charts.png)
 
 ## Dashboard Preview
 
