@@ -10,14 +10,9 @@
 - [x] Task: Conductor - User Manual Verification 'Template Refactoring & Custom Input' (Protocol in workflow.md) cb2caab
 
 ## Phase 3: Frontend Interaction (JavaScript)
-- [ ] Task: Implement JavaScript logic for "Auto-Update".
-    -   Attach event listeners to preset buttons.
-    -   Attach `change` (or `input` with debounce) listeners to custom text and date inputs.
-    -   Implement logic to construct the new URL and reload the page (or fetch via AJAX if existing architecture supports it; assuming page reload for now based on simplicity).
-- [ ] Task: Implement "Mutual Exclusivity" logic.
-    -   If a preset or custom duration is touched, clear the Date Range inputs.
-    -   If a Date Range input is touched, clear the custom duration input/active preset.
-- [ ] Task: Conductor - User Manual Verification 'Frontend Interaction (JavaScript)' (Protocol in workflow.md)
+- [x] Task: Implement JavaScript logic for "Auto-Update". 30b92ee
+- [x] Task: Implement "Mutual Exclusivity" logic. 30b92ee
+- [x] Task: Conductor - User Manual Verification 'Frontend Interaction (JavaScript)' (Protocol in workflow.md) 30b92ee
 
 ## Phase 4: Integration & Polish
 - [ ] Task: Verify the entire flow.
