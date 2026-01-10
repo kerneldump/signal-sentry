@@ -20,41 +20,49 @@ const htmlTemplate = `
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="refresh" content="60">
     <title>Signal Sentry Live</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f4f4f4; margin: 0; padding: 20px; }
-        .nav { margin-bottom: 20px; }
-        .nav a {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 0 5px;
-            background: #ddd;
-            text-decoration: none;
-            color: #333;
-            border-radius: 5px;
-            font-weight: bold;
-        }
-        .nav a.active { background: #333; color: #fff; }
-        .nav a:hover { background: #bbb; }
-        .chart-container { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); display: inline-block; }
-        img { max-width: 100%; height: auto; }
-        .footer { margin-top: 20px; color: #777; font-size: 0.9em; }
+        body { background: #f8f9fa; }
+        .toolbar { background: #fff; border-bottom: 1px solid #dee2e6; padding: 15px 0; margin-bottom: 20px; }
+        .chart-container { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.05); }
+        .btn-group-custom .btn { font-weight: 500; }
+        .form-control-custom { width: 120px !important; display: inline-block; }
+        .date-picker-group { display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
 <body>
-    <h1>Signal Sentry Live</h1>
-    
-    <div class="nav">
-        {{range .Links}}
-        <a href="/?range={{.Val}}" class="{{if .Active}}active{{end}}">{{.Label}}</a>
-        {{end}}
+    <div class="toolbar shadow-sm">
+        <div class="container-fluid d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <h1 class="h4 mb-0">Signal Sentry Live</h1>
+            
+            <form id="filterForm" class="d-flex align-items-center gap-3 flex-nowrap overflow-auto">
+                <div class="btn-group btn-group-sm btn-group-custom flex-shrink-0" role="group">
+                    {{range .Links}}
+                    <a href="/?range={{.Val}}" class="btn {{if .Active}}btn-primary{{else}}btn-outline-secondary{{end}}">{{.Label}}</a>
+                    {{end}}
+                </div>
+
+                <div class="input-group input-group-sm flex-shrink-0" style="width: auto;">
+                    <span class="input-group-text">Custom</span>
+                    <input type="text" name="range" class="form-control form-control-custom" placeholder="e.g. 2h" value="{{.CurrentRange}}">
+                </div>
+
+                <div class="date-picker-group flex-nowrap flex-shrink-0">
+                    <input type="datetime-local" name="start" class="form-control form-control-sm" value="{{.Start}}">
+                    <span class="text-muted">to</span>
+                    <input type="datetime-local" name="end" class="form-control form-control-sm" value="{{.End}}">
+                </div>
+            </form>
+        </div>
     </div>
 
-    <div class="chart-container">
-        <img src="/chart.png?range={{.CurrentRange}}" alt="Signal Chart">
-    </div>
-
-    <div class="footer">
-        Last updated: {{.LastUpdated}} | Auto-refreshing every 60s
+    <div class="container-fluid text-center">
+        <div class="chart-container d-inline-block">
+            <img src="/chart.png?range={{.CurrentRange}}&start={{.Start}}&end={{.End}}" alt="Signal Chart" class="img-fluid rounded">
+            <div class="mt-3 text-muted small">
+                Last updated: {{.LastUpdated}} | Auto-refreshing every 60s
+            </div>
+        </div>
     </div>
 </body>
 </html>
