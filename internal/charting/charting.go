@@ -6,6 +6,7 @@ import (
 	"image/png"
 	"io"
 	"os"
+	"time"
 
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
@@ -134,7 +135,12 @@ func GenerateToWriter(data []models.CombinedStats, w io.Writer) error {
 
 	// Common Time Ticker
 	// We use the standard TimeTicks which interprets float64 X values as unix seconds
-	timeTicks := plot.TimeTicks{Format: "15:04"}
+	timeTicks := plot.TimeTicks{
+		Format: "15:04",
+		Time: func(t float64) time.Time {
+			return time.Unix(int64(t), 0).Local()
+		},
+	}
 
 	// Create Plots
 
