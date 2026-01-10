@@ -1,6 +1,6 @@
 # Track Plan: Web UI Time Range & Filtering Overhaul
 
-## Phase 1: Backend Parsing Logic
+## Phase 1: Backend Parsing Logic [checkpoint: 9656177]
 - [x] Task: Create tests for `internal/web` to verify parsing of new query parameters (`range`, `start`, `end`). f6c8e04
 - [x] Task: Update `internal/web/server.go` (or `request_handler.go`) to implement the parameter parsing logic. f6c8e04
 - [x] Task: Conductor - User Manual Verification 'Backend Parsing Logic' (Protocol in workflow.md) f6c8e04
