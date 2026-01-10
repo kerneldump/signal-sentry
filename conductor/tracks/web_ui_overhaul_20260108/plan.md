@@ -9,7 +9,7 @@
 - [x] Task: Update the Go templates (HTML) for the toolbar. cb2caab
 - [x] Task: Conductor - User Manual Verification 'Template Refactoring & Custom Input' (Protocol in workflow.md) cb2caab
 
-## Phase 3: Frontend Interaction (JavaScript)
+## Phase 3: Frontend Interaction (JavaScript) [checkpoint: 48f7369]
 - [x] Task: Implement JavaScript logic for "Auto-Update". 30b92ee
 - [x] Task: Implement "Mutual Exclusivity" logic. 30b92ee
 - [x] Task: Conductor - User Manual Verification 'Frontend Interaction (JavaScript)' (Protocol in workflow.md) 30b92ee
