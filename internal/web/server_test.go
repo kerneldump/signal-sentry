@@ -25,7 +25,7 @@ func TestHandleIndex(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	expectedLinks := []string{"5m", "15m", "30m", "45m", "1h", "24h"}
+	expectedLinks := []string{"10m", "1h", "6h", "24h", "Max"}
 	for _, link := range expectedLinks {
 		if !strings.Contains(rr.Body.String(), link) {
 			t.Errorf("handler returned body does not contain link for %v", link)

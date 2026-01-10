@@ -69,6 +69,8 @@ type Link struct {
 type PageData struct {
 	Links        []Link
 	CurrentRange string
+	Start        string
+	End          string
 	LastUpdated  string
 }
 
@@ -91,35 +93,32 @@ func Run(port int, logFile string, quiet bool) error {
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request, quiet bool) {
-	currentRange := r.URL.Query().Get("range")
-	if currentRange == "" {
-		currentRange = "24h"
+	_, currentRange, err := parseTimeFilter(r)
+	if err != nil {
+		// Just log and continue with default if index fails parsing
+		if !quiet {
+			log.Printf("Filter parse error in index: %v", err)
+		}
 	}
+
+	start := r.URL.Query().Get("start")
+	end := r.URL.Query().Get("end")
 
 	ranges := []struct {
 		Label string
 		Val   string
 	}{
-		{"5m", "5m"},
-		{"15m", "15m"},
-		{"30m", "30m"},
-		{"45m", "45m"},
+		{"10m", "10m"},
 		{"1h", "1h"},
-		{"2h", "2h"},
-		{"3h", "3h"},
 		{"6h", "6h"},
-		{"12h", "12h"},
 		{"24h", "24h"},
-		{"48h", "48h"},
 		{"Max", "0"},
 	}
 
 	links := make([]Link, len(ranges))
 	for i, rng := range ranges {
-		active := rng.Val == currentRange
-		if currentRange == "0" && rng.Val == "0" {
-			active = true
-		} else if currentRange == "" && rng.Val == "24h" {
+		active := rng.Val == currentRange && start == "" && end == ""
+		if currentRange == "0" && rng.Val == "0" && start == "" && end == "" {
 			active = true
 		}
 		
@@ -133,6 +132,8 @@ func handleIndex(w http.ResponseWriter, r *http.Request, quiet bool) {
 	data := PageData{
 		Links:        links,
 		CurrentRange: currentRange,
+		Start:        start,
+		End:          end,
 		LastUpdated:  time.Now().Format("15:04:05"),
 	}
 
@@ -151,26 +152,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request, quiet bool) {
 }
 
 func handleChart(w http.ResponseWriter, r *http.Request, logFile string, quiet bool) {
-	rangeStr := r.URL.Query().Get("range")
-	
-	// Default to 24h if missing
-	var rangeDur time.Duration
-	var err error
-	
-	// Handle "0" or "max"
-	if rangeStr == "0" || rangeStr == "max" {
-		rangeDur = 0
-	} else if rangeStr != "" {
-		rangeDur, err = time.ParseDuration(rangeStr)
-		if err != nil {
-			// Fallback to 24h on error
-			rangeDur = 24 * time.Hour
-		}
-	} else {
-		rangeDur = 24 * time.Hour
-	}
-
-	filter, err := analysis.NewTimeFilter("", "", rangeDur)
+	filter, _, err := parseTimeFilter(r)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Filter Error: %v", err), http.StatusBadRequest)
 		return
