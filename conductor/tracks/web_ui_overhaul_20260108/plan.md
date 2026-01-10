@@ -5,7 +5,7 @@
 - [x] Task: Update `internal/web/server.go` (or `request_handler.go`) to implement the parameter parsing logic. f6c8e04
 - [x] Task: Conductor - User Manual Verification 'Backend Parsing Logic' (Protocol in workflow.md) f6c8e04
 
-## Phase 2: Template Refactoring & Custom Input
+## Phase 2: Template Refactoring & Custom Input [checkpoint: 3ec3864]
 - [x] Task: Update the Go templates (HTML) for the toolbar. cb2caab
 - [x] Task: Conductor - User Manual Verification 'Template Refactoring & Custom Input' (Protocol in workflow.md) cb2caab
 
