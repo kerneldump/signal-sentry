@@ -6,13 +6,8 @@
 - [x] Task: Conductor - User Manual Verification 'Backend Parsing Logic' (Protocol in workflow.md) f6c8e04
 
 ## Phase 2: Template Refactoring & Custom Input
-- [ ] Task: Update the Go templates (HTML) for the toolbar.
-    -   Remove old preset buttons.
-    -   Add new preset buttons: `10m`, `1h`, `6h`, `24h`, `Max`.
-    -   Add `<input type="text">` for custom relative duration.
-    -   Add `<div>` container for date range pickers (initially hidden or alongside).
-    -   Add `<input type="datetime-local">` for start and end times.
-- [ ] Task: Conductor - User Manual Verification 'Template Refactoring & Custom Input' (Protocol in workflow.md)
+- [x] Task: Update the Go templates (HTML) for the toolbar. cb2caab
+- [x] Task: Conductor - User Manual Verification 'Template Refactoring & Custom Input' (Protocol in workflow.md) cb2caab
 
 ## Phase 3: Frontend Interaction (JavaScript)
 - [ ] Task: Implement JavaScript logic for "Auto-Update".
