@@ -64,6 +64,48 @@ const htmlTemplate = `
             </div>
         </div>
     </div>
+
+    <script>
+        const form = document.getElementById('filterForm');
+        const rangeInput = form.querySelector('input[name="range"]');
+        const startInput = form.querySelector('input[name="start"]');
+        const endInput = form.querySelector('input[name="end"]');
+
+        // Auto-submit on change for date pickers
+        [startInput, endInput].forEach(input => {
+            input.addEventListener('change', () => {
+                if (input.value) {
+                    rangeInput.value = ''; // Clear relative range when date is picked
+                }
+                form.submit();
+            });
+        });
+
+        // Auto-submit on custom range (with debounce for typing)
+        let timeout;
+        rangeInput.addEventListener('input', () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                if (rangeInput.value) {
+                    startInput.value = ''; // Clear dates when relative range is typed
+                    endInput.value = '';
+                }
+                form.submit();
+            }, 800); // 800ms debounce
+        });
+
+        // Ensure hitting Enter in custom range submits immediately
+        rangeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (rangeInput.value) {
+                    startInput.value = '';
+                    endInput.value = '';
+                }
+                form.submit();
+            }
+        });
+    </script>
 </body>
 </html>
 `
