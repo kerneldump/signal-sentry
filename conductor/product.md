@@ -19,3 +19,4 @@ A CLI tool designed to monitor and display real-time signal statistics from a T-
 - **"Find Best Spot" Mode:** A specialized interface or mode focused on placement, providing high-visibility indicators for signal improvements.
 - **Detailed Signal Metrics:** Comprehensive display of 4G/5G bands, signal power, quality, and tower identification information.
 - **Configurable Refresh Rate:** Users can customize the data polling interval via a command-line flag (`-interval`).
+- **Live Web Dashboard:** A browser-based interface for visualizing signal history with advanced time filtering (custom ranges and date pickers).

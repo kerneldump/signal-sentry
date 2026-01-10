@@ -8,6 +8,8 @@
 - **Standard Library (`net/http`):** Used for all communication with the gateway's REST API.
 - **Standard Library (`encoding/json`):** Handles parsing of the gateway's JSON responses into structured data.
 - **Standard Library (`time`):** Manages the polling interval for real-time updates and timeouts.
+- **Bootstrap (CSS Framework):** Used for styling the web dashboard (loaded via CDN).
+- **Gonum/plot:** Used for generating high-resolution signal analysis charts.
 
 ## Architecture
 - **Modular Structure:** Core gateway interaction logic is isolated in the `internal/gateway` package.

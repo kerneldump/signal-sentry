@@ -91,3 +91,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## [x] Track: Unified Run Mode (TUI + Web)
 *Link: [./conductor/tracks/unified_run_mode_20260107/](./conductor/tracks/unified_run_mode_20260107/)*
+
+## [x] Track: Overhaul Web UI with simplified presets (10m, 1h, 6h, 24h, Max), custom relative duration input, and absolute date range pickers.
+*Link: [./conductor/tracks/web_ui_overhaul_20260108/](./conductor/tracks/web_ui_overhaul_20260108/)*
