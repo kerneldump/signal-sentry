@@ -14,7 +14,7 @@
 - [x] Task: Implement "Mutual Exclusivity" logic. 30b92ee
 - [x] Task: Conductor - User Manual Verification 'Frontend Interaction (JavaScript)' (Protocol in workflow.md) 30b92ee
 
-## Phase 4: Integration & Polish
+## Phase 4: Integration & Polish [checkpoint: bf34b1d]
 - [x] Task: Verify the entire flow.
 - [x] Task: Polish the CSS (Bootstrap) to ensure the new inputs look good on mobile and desktop.
-- [~] Task: Conductor - User Manual Verification 'Integration & Polish' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Integration & Polish' (Protocol in workflow.md) bf34b1d
