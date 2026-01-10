@@ -15,8 +15,6 @@
 - [x] Task: Conductor - User Manual Verification 'Frontend Interaction (JavaScript)' (Protocol in workflow.md) 30b92ee
 
 ## Phase 4: Integration & Polish
-- [ ] Task: Verify the entire flow.
-    -   Check if `analysis.Run` (or the chart generation function) respects the new high-precision filters.
-    -   Ensure chart titles/subtitles reflect the active filter.
-- [ ] Task: Polish the CSS (Bootstrap) to ensure the new inputs look good on mobile and desktop.
-- [ ] Task: Conductor - User Manual Verification 'Integration & Polish' (Protocol in workflow.md)
+- [x] Task: Verify the entire flow.
+- [x] Task: Polish the CSS (Bootstrap) to ensure the new inputs look good on mobile and desktop.
+- [~] Task: Conductor - User Manual Verification 'Integration & Polish' (Protocol in workflow.md)
