@@ -33,7 +33,7 @@ func TestAnalyzeEndToEnd(t *testing.T) {
 		"BARS SEEN:",
 		"3", "1 samples (50.0%)",
 		"4", "1 samples (50.0%) real-time",
-		"Loss (%)", "-", "0.0", "-",
+		"Packet Loss", "0 / 20 (0.00%)",
 		"BARS AVG:",
 		"Overall", "3.5",
 		"SgnlHealth", "3.9",
@@ -66,7 +66,7 @@ func TestAnalyzeLiveTower(t *testing.T) {
 	// 3. Verify Output
 	result := output.String()
 
-	expectedLive := "200        1 samples (50.0%) live"
+	expectedLive := "200  1 samples (50.0%) live"
 	if !strings.Contains(result, expectedLive) {
 		t.Errorf("Expected output to contain live tower marker %q.\nOutput:\n%s", expectedLive, result)
 	}
@@ -94,20 +94,12 @@ func TestAnalyzeLossCalculation(t *testing.T) {
 	}
 
 	result := output.String()
-	// Check for "Loss (%)" row with "-" "5.0" "-"
-	// Using fields/contains might be safer than exact whitespace matching
-	lines := strings.Split(result, "\n")
-	foundLoss := false
-	for _, line := range lines {
-		if strings.Contains(line, "Loss (%)") {
-			foundLoss = true
-			if !strings.Contains(line, "-") || !strings.Contains(line, "5.0") {
-				t.Errorf("Expected Loss line to contain '-' and '5.0', got: %q", line)
-			}
-		}
+	// Check for "Packet Loss: 1 / 20 (5.00%)"
+	if !strings.Contains(result, "Packet Loss") {
+		t.Error("Did not find 'Packet Loss' row in output")
 	}
-	if !foundLoss {
-		t.Error("Did not find Loss (%) row in output")
+	if !strings.Contains(result, "5.00%") {
+		t.Errorf("Expected Loss to contain '5.00%%', got:\n%s", result)
 	}
 }
 
@@ -177,7 +169,7 @@ func TestAnalyzeRealTimeBars(t *testing.T) {
 	// 3. Verify Output
 	result := output.String()
 
-	expectedRealTime := "5          1 samples (50.0%) real-time"
+	expectedRealTime := "5  1 samples (50.0%) real-time"
 	if !strings.Contains(result, expectedRealTime) {
 		t.Errorf("Expected output to contain real-time bar marker %q.\nOutput:\n%s", expectedRealTime, result)
 	}

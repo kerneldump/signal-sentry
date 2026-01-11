@@ -159,8 +159,11 @@ func handleIndex(w http.ResponseWriter, r *http.Request, quiet bool) {
 		Val   string
 	}{
 		{"10m", "10m"},
+		{"30m", "30m"},
 		{"1h", "1h"},
+		{"3h", "3h"},
 		{"6h", "6h"},
+		{"12h", "12h"},
 		{"24h", "24h"},
 		{"Max", "0"},
 	}

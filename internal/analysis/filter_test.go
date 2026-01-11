@@ -26,6 +26,27 @@ func TestNewTimeFilter_RangePrecedence(t *testing.T) {
 	}
 }
 
+func TestNewTimeFilter_NegativeDuration(t *testing.T) {
+	// If negative range is provided, it should be treated as positive magnitude
+	dur := -1 * time.Hour
+	f, err := NewTimeFilter("", "", dur)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	// Verify Start is approx Now - 1h (magnitude of -1h)
+	now := time.Now()
+	expectedDur := 1 * time.Hour
+	expectedStart := now.Add(-expectedDur)
+	
+	if f.Start.Sub(expectedStart).Abs() > time.Second {
+		t.Errorf("Expected Start ~ %v, got %v", expectedStart, f.Start)
+	}
+	if f.End.Sub(now).Abs() > time.Second {
+		t.Errorf("Expected End ~ %v, got %v", now, f.End)
+	}
+}
+
 func TestNewTimeFilter_ExplicitDates(t *testing.T) {
 	startStr := "2025-01-01"
 	endStr := "2025-01-02 12:00:00"

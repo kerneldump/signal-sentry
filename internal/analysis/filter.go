@@ -29,11 +29,14 @@ func (f *TimeFilter) Contains(t time.Time) bool {
 
 // NewTimeFilter constructs a filter based on user inputs.
 // Precedence:
-// 1. If rangeDur > 0, Start = Now - rangeDur, End = Now.
+// 1. If rangeDur != 0, Start = Now - abs(rangeDur), End = Now.
 // 2. Else, parse start/end strings.
 func NewTimeFilter(startStr, endStr string, rangeDur time.Duration) (*TimeFilter, error) {
 	// 1. Handle Relative Range
-	if rangeDur > 0 {
+	if rangeDur != 0 {
+		if rangeDur < 0 {
+			rangeDur = -rangeDur
+		}
 		now := time.Now()
 		return &TimeFilter{
 			Start: now.Add(-rangeDur),
