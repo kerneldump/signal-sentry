@@ -45,10 +45,11 @@ type Report struct {
 	EndTime      time.Time
 	Filter       *TimeFilter
 
-	RSRP Metric
-	SINR Metric
-	Ping Metric
-	Loss Metric
+	RSRP   Metric
+	SINR   Metric
+	Ping   Metric
+	StdDev Metric
+	Loss   Metric
 
 	TotalPingSent int
 	TotalPingLost int
@@ -84,6 +85,7 @@ func Analyze(input io.Reader, output io.Writer, filter *TimeFilter) error {
 	}
 	// Initialize Min values to avoid 0.0 bias
 	report.Ping.Min = math.MaxFloat64
+	report.StdDev.Min = math.MaxFloat64
 	report.RSRP.Min = 0
 	report.SINR.Min = 99
 
@@ -128,6 +130,9 @@ func Analyze(input io.Reader, output io.Writer, filter *TimeFilter) error {
 			}
 			report.Ping.Sum += stats.Ping.Avg
 			report.Ping.Count++
+
+			// Add StdDev stats
+			report.StdDev.Add(stats.Ping.StdDev)
 		}
 		report.Loss.Add(stats.Ping.Loss)
 		report.TotalPingSent += stats.Ping.Sent
@@ -241,6 +246,13 @@ func printReport(w io.Writer, r *Report) {
 		pMin = 0
 	}
 	fmt.Fprintf(tw, "Ping (ms)\t%.1f\t%.1f\t%.1f\n", pMin, r.Ping.Avg(), r.Ping.Max)
+	
+sMin := r.StdDev.Min
+	if sMin == math.MaxFloat64 {
+		sMin = 0
+	}
+	fmt.Fprintf(tw, "StdDev (ms)\t%.1f\t%.1f\t%.1f\n", sMin, r.StdDev.Avg(), r.StdDev.Max)
+
 	tw.Flush()
 
 	if r.TotalPingSent > 0 {
