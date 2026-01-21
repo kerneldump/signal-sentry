@@ -1,0 +1,8 @@
+{
+  "id": "stddev_analysis_20260117",
+  "name": "Add StdDev/Jitter statistics to analysis output",
+  "description": "Calculate and display the Minimum, Average, and Maximum Standard Deviation (Jitter) of ping latencies in the historical analysis report.",
+  "status": "COMPLETED",
+  "created_at": "2026-01-17T00:00:00Z",
+  "updated_at": "2026-01-17T00:00:00Z"
+}
