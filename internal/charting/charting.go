@@ -298,13 +298,26 @@ func GenerateToWriter(data []models.CombinedStats, w io.Writer) error {
 	lineStd, _ := plotter.NewLine(stdDevXYs)
 	lineStd.Color = color.RGBA{R: 255, G: 140, B: 0, A: 255} // Dark Orange
 
-	lineLoss, _ := plotter.NewLine(lossXYs)
-	lineLoss.Color = color.RGBA{R: 0, G: 0, B: 0, A: 255} // Black
+	// Filter loss points for scatter plot (only show > 0%)
+	var lossScatterData plotter.XYs
+	for _, pt := range lossXYs {
+		// In the sanitization step above, 0.0 was converted to 0.1.
+		// Real loss (e.g. 1/20 = 5%) is 5.0.
+		// So we only show dots if Y > 0.11 (safe margin).
+		if pt.Y > 0.11 {
+			lossScatterData = append(lossScatterData, pt)
+		}
+	}
 
-	pLat.Add(lineLat, lineStd, lineLoss)
+	scatterLoss, _ := plotter.NewScatter(lossScatterData)
+	scatterLoss.GlyphStyle.Shape = draw.CircleGlyph{}
+	scatterLoss.GlyphStyle.Color = color.RGBA{R: 0, G: 0, B: 0, A: 255} // Black
+	scatterLoss.GlyphStyle.Radius = vg.Points(2.5)
+
+	pLat.Add(lineLat, lineStd, scatterLoss)
 	pLat.Legend.Add("Avg (ms)", lineLat)
 	pLat.Legend.Add("StdDev", lineStd)
-	pLat.Legend.Add("Loss (%)", lineLoss)
+	pLat.Legend.Add("Loss (%)", scatterLoss)
 	pLat.Add(plotter.NewGrid())
 
 	// Add Labels
@@ -312,7 +325,7 @@ func GenerateToWriter(data []models.CombinedStats, w io.Writer) error {
 	addLastPointLabel(pLat, stdDevXYs, "%.0f", lineStd.Color)
 	// Optionally label Loss if > 0.1 (sanitized 0)
 	if len(lossXYs) > 0 && lossXYs[len(lossXYs)-1].Y > 0.11 {
-		addLastPointLabel(pLat, lossXYs, "%.1f%%", lineLoss.Color)
+		addLastPointLabel(pLat, lossXYs, "%.1f%%", scatterLoss.GlyphStyle.Color)
 	}
 
 	// --- 2. Signal Strength (Split) ---
