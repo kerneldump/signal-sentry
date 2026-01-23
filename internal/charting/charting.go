@@ -72,8 +72,8 @@ func downsample(data plotter.XYs, maxPoints int) plotter.XYs {
 	return downsampled
 }
 
-// addLastPointLabel adds a text label to the last point of the data series.
-func addLastPointLabel(p *plot.Plot, data plotter.XYs, format string, c color.Color) {
+// addCustomLabel adds a custom text label to the last point of the data series.
+func addCustomLabel(p *plot.Plot, data plotter.XYs, labelText string, c color.Color) {
 	if len(data) == 0 {
 		return
 	}
@@ -81,7 +81,7 @@ func addLastPointLabel(p *plot.Plot, data plotter.XYs, format string, c color.Co
 
 	labels, err := plotter.NewLabels(plotter.XYLabels{
 		XYs:    plotter.XYs{lastPt},
-		Labels: []string{fmt.Sprintf(format, lastPt.Y)},
+		Labels: []string{labelText},
 	})
 	if err != nil {
 		return
@@ -94,6 +94,15 @@ func addLastPointLabel(p *plot.Plot, data plotter.XYs, format string, c color.Co
 	labels.Offset = vg.Point{X: vg.Points(5), Y: 0}
 
 	p.Add(labels)
+}
+
+// addLastPointLabel adds a text label to the last point of the data series.
+func addLastPointLabel(p *plot.Plot, data plotter.XYs, format string, c color.Color) {
+	if len(data) == 0 {
+		return
+	}
+	lastPt := data[len(data)-1]
+	addCustomLabel(p, data, fmt.Sprintf(format, lastPt.Y), c)
 }
 
 // Generate creates a PNG chart from the provided stats and saves it to outputFile.
@@ -165,8 +174,19 @@ func GenerateToWriter(data []models.CombinedStats, w io.Writer) error {
 		return 0
 	}
 
+	// Variables to calculate averages
+	var sumLatency, sumStdDev float64
+	var countLatency int
+
 	for i, d := range data {
 		t := getTime(d.Gateway.Time.LocalTime)
+
+		// Accumulate for average (skip zero/invalid pings)
+		if d.Ping.Avg > 0 {
+			sumLatency += d.Ping.Avg
+			sumStdDev += d.Ping.StdDev
+			countLatency++
+		}
 
 		// Sanitize for Log Scale (must be > 0)
 		avg := d.Ping.Avg
@@ -320,9 +340,17 @@ func GenerateToWriter(data []models.CombinedStats, w io.Writer) error {
 	pLat.Legend.Add("Loss (%)", scatterLoss)
 	pLat.Add(plotter.NewGrid())
 
+	// Calculate averages
+	avgLatency := 0.0
+	avgStdDev := 0.0
+	if countLatency > 0 {
+		avgLatency = sumLatency / float64(countLatency)
+		avgStdDev = sumStdDev / float64(countLatency)
+	}
+
 	// Add Labels
-	addLastPointLabel(pLat, latencyXYs, "%.0fms", lineLat.Color)
-	addLastPointLabel(pLat, stdDevXYs, "%.0f", lineStd.Color)
+	addCustomLabel(pLat, latencyXYs, fmt.Sprintf("Avg: %.1fms", avgLatency), lineLat.Color)
+	addCustomLabel(pLat, stdDevXYs, fmt.Sprintf("Avg: %.1f", avgStdDev), lineStd.Color)
 	// Optionally label Loss if > 0.1 (sanitized 0)
 	if len(lossXYs) > 0 && lossXYs[len(lossXYs)-1].Y > 0.11 {
 		addLastPointLabel(pLat, lossXYs, "%.1f%%", scatterLoss.GlyphStyle.Color)
