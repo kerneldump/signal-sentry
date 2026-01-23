@@ -95,5 +95,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 ## [x] Track: Overhaul Web UI with simplified presets (10m, 1h, 6h, 24h, Max), custom relative duration input, and absolute date range pickers.
 *Link: [./conductor/tracks/web_ui_overhaul_20260108/](./conductor/tracks/web_ui_overhaul_20260108/)*
 
-## [x] Track: Add StdDev/Jitter statistics to analysis output
-*Link: [./conductor/tracks/stddev_analysis_20260117/](./conductor/tracks/stddev_analysis_20260117/)*
+## [x] Track: Display Averages on Latency Chart
+*Link: [./conductor/tracks/chart_averages_20260123/](./conductor/tracks/chart_averages_20260123/)*
+
