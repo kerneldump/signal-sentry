@@ -202,8 +202,8 @@ func (m *Model) View() string {
 		s.WriteString(helpText + "\n")
 	} else {
 		// 3. Header
-		s.WriteString(headerStyle.Render(" TYPE  | BANDS      | BARS | RSRP  | SINR  | RSRQ | RSSI | CID   | TWR gNBID/PCIDE | MIN AVG MAX STD LOSS") + "\n")
-		s.WriteString("-------+------------+------+-------+-------+------+------+-------+-----------------+-------------------------\n")
+		s.WriteString(headerStyle.Render(" BANDS       | BARS    | RSRP      | SINR      | RSRQ      | RSSI      | CID         | TOWER             | MIN AVG MAX STD LOSS") + "\n")
+		s.WriteString("-------------+---------+-----------+-----------+-----------+-----------+-------------+-------------------+-------------------------\n")
 
 		// 4. Buffer
 		// guideLines: Device(1), Metrics(1), PingStats(2), Interval(1), Empty(1), Header(1), Separator(1) = 8
@@ -215,24 +215,12 @@ func (m *Model) View() string {
 		}
 
 		for _, data := range m.buffer {
-			// 5G row
-			row5g := m.renderRow("5G", data.Gateway.Signal.FiveG, data.Ping)
+			row := m.renderRow(data.Gateway.Signal.FiveG, data.Gateway.Signal.FourG, data.Ping)
 			if linesUsed < maxLines {
-				s.WriteString(row5g)
+				s.WriteString(row)
 				linesUsed++
 			} else {
 				break
-			}
-
-			// 4G row
-			if len(data.Gateway.Signal.FourG.Bands) > 0 || data.Gateway.Signal.FourG.Bars > 0 {
-				row4g := m.renderRow("4G", data.Gateway.Signal.FourG, data.Ping)
-				if linesUsed < maxLines {
-					s.WriteString(row4g)
-					linesUsed++
-				} else {
-					break
-				}
 			}
 		}
 	}
@@ -240,23 +228,75 @@ func (m *Model) View() string {
 	return s.String()
 }
 
-func (m *Model) renderRow(connType string, stats models.ConnectionStats, ping models.PingStats) string {
-	bands := strings.Join(stats.Bands, ",")
-	if bands == "" {
-		bands = "---"
+func combineInts(v5g, v4g int, has5g, has4g bool) string {
+	if has5g && has4g {
+		return fmt.Sprintf("%d/%d", v5g, v4g)
+	} else if has5g {
+		return fmt.Sprintf("%d", v5g)
+	} else if has4g {
+		return fmt.Sprintf("%d", v4g)
+	}
+	return "---"
+}
+
+func (m *Model) renderRow(fiveG, fourG models.ConnectionStats, ping models.PingStats) string {
+	has5g := len(fiveG.Bands) > 0 || fiveG.Bars > 0
+	has4g := len(fourG.Bands) > 0 || fourG.Bars > 0
+
+	b5 := strings.Join(fiveG.Bands, ",")
+	b4 := strings.Join(fourG.Bands, ",")
+	bandsStr := ""
+	if has5g && has4g {
+		bandsStr = b5 + "," + b4
+	} else if has5g {
+		bandsStr = b5
+	} else {
+		bandsStr = b4
+	}
+	if bandsStr == "" || bandsStr == "," {
+		bandsStr = "---"
 	}
 
-	towerID := stats.GNBID
-	if towerID == 0 {
-		towerID = stats.PCID
+	tower5g := fiveG.GNBID
+	if tower5g == 0 {
+		tower5g = fiveG.PCID
+	}
+	tower4g := fourG.GNBID
+	if tower4g == 0 {
+		tower4g = fourG.PCID
 	}
 
-	// Colorize Connection Type
-	typeStr := connType
-	if connType == "5G" {
-		typeStr = lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Render(fmt.Sprintf("%-2s", connType))
-	} else if connType == "4G" {
-		typeStr = lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Render(fmt.Sprintf("%-2s", connType))
+	bar5 := m.colorizeBars(fiveG.Bars)
+	bar4 := m.colorizeBars(fourG.Bars)
+	barsStr := ""
+	if has5g && has4g {
+		barsStr = bar5 + "/" + bar4
+	} else if has5g {
+		barsStr = bar5 + "    "
+	} else {
+		barsStr = "   /" + bar4
+	}
+
+	r5 := m.colorizeRSRP(fiveG.RSRP)
+	r4 := m.colorizeRSRP(fourG.RSRP)
+	rsrpStr := ""
+	if has5g && has4g {
+		rsrpStr = r5 + "/" + r4
+	} else if has5g {
+		rsrpStr = r5 + "     "
+	} else {
+		rsrpStr = "    /" + r4
+	}
+
+	s5 := m.colorizeSINR(fiveG.SINR)
+	s4 := m.colorizeSINR(fourG.SINR)
+	sinrStr := ""
+	if has5g && has4g {
+		sinrStr = s5 + "/" + s4
+	} else if has5g {
+		sinrStr = s5 + "     "
+	} else {
+		sinrStr = "    /" + s4
 	}
 
 	// Format loss string
@@ -267,16 +307,15 @@ func (m *Model) renderRow(connType string, stats models.ConnectionStats, ping mo
 	}
 
 	// Row Printf with explicit spaces to match header
-	return fmt.Sprintf("  %s   | %-10s | %s  | %s  | %s  | %-4d | %-4d | %-5d | %-15d | %.1f %.1f %.1f %.1f %s \n",
-		typeStr,
-		bands,
-		m.colorizeBars(stats.Bars),
-		m.colorizeRSRP(stats.RSRP),
-		m.colorizeSINR(stats.SINR),
-		stats.RSRQ,
-		stats.RSSI,
-		stats.CID,
-		towerID,
+	return fmt.Sprintf(" %-11s | %s | %s | %s | %-9s | %-9s | %-11s | %-17s | %.1f %.1f %.1f %.1f %s \n",
+		bandsStr,
+		barsStr,
+		rsrpStr,
+		sinrStr,
+		combineInts(fiveG.RSRQ, fourG.RSRQ, has5g, has4g),
+		combineInts(fiveG.RSSI, fourG.RSSI, has5g, has4g),
+		combineInts(fiveG.CID, fourG.CID, has5g, has4g),
+		combineInts(tower5g, tower4g, has5g, has4g),
 		ping.Min, ping.Avg, ping.Max, ping.StdDev, lossStr,
 	)
 }

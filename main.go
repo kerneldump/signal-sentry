@@ -310,12 +310,7 @@ func runLegacyLoop(cfg *config.Config, client *http.Client, pg *pinger.Pinger, l
 			printHeader()
 		}
 
-		printRow("5G", data.Gateway.Signal.FiveG, data.Ping)
-		if len(data.Gateway.Signal.FourG.Bands) > 0 || data.Gateway.Signal.FourG.Bars > 0 {
-			printRow("4G", data.Gateway.Signal.FourG, data.Ping)
-			linesPrinted++
-		}
-
+		printRow(data.Gateway.Signal.FiveG, data.Gateway.Signal.FourG, data.Ping)
 		linesPrinted++
 		time.Sleep(refreshDuration)
 	}
@@ -367,29 +362,79 @@ const (
 )
 
 func printHeader() {
-	// Column Widths (Visible):
-	// Type: 6, Bands: 12, Bars: 6, RSRP: 7, SINR: 7, RSRQ: 6, RSSI: 6, CID: 7, Tower: 17, Stats: 24
-	fmt.Println(" TYPE  | BANDS      | BARS | RSRP  | SINR  | RSRQ | RSSI | CID   | TWR gNBID/PCIDE | MIN AVG MAX STD LOSS")
-	fmt.Println("-------+------------+------+-------+-------+------+------+-------+-----------------+-------------------------")
+	fmt.Println(" BANDS       | BARS    | RSRP      | SINR      | RSRQ      | RSSI      | CID         | TOWER             | MIN AVG MAX STD LOSS")
+	fmt.Println("-------------+---------+-----------+-----------+-----------+-----------+-------------+-------------------+-------------------------")
 }
 
-func printRow(connType string, stats models.ConnectionStats, ping models.PingStats) {
-	bands := strings.Join(stats.Bands, ",")
-	if bands == "" {
-		bands = "---"
+func combineInts(v5g, v4g int, has5g, has4g bool) string {
+	if has5g && has4g {
+		return fmt.Sprintf("%d/%d", v5g, v4g)
+	} else if has5g {
+		return fmt.Sprintf("%d", v5g)
+	} else if has4g {
+		return fmt.Sprintf("%d", v4g)
+	}
+	return "---"
+}
+
+func printRow(fiveG, fourG models.ConnectionStats, ping models.PingStats) {
+	has5g := len(fiveG.Bands) > 0 || fiveG.Bars > 0
+	has4g := len(fourG.Bands) > 0 || fourG.Bars > 0
+
+	b5 := strings.Join(fiveG.Bands, ",")
+	b4 := strings.Join(fourG.Bands, ",")
+	bandsStr := ""
+	if has5g && has4g {
+		bandsStr = b5 + "," + b4
+	} else if has5g {
+		bandsStr = b5
+	} else {
+		bandsStr = b4
+	}
+	if bandsStr == "" || bandsStr == "," {
+		bandsStr = "---"
 	}
 
-	towerID := stats.GNBID
-	if towerID == 0 {
-		towerID = stats.PCID
+	tower5g := fiveG.GNBID
+	if tower5g == 0 {
+		tower5g = fiveG.PCID
+	}
+	tower4g := fourG.GNBID
+	if tower4g == 0 {
+		tower4g = fourG.PCID
 	}
 
-	// Colorize Connection Type
-	typeStr := connType
-	if connType == "5G" {
-		typeStr = fmt.Sprintf("%s%-2s%s", ColorCyan, connType, ColorReset)
-	} else if connType == "4G" {
-		typeStr = fmt.Sprintf("%s%-2s%s", ColorBlue, connType, ColorReset)
+	bar5 := colorizeBars(fiveG.Bars)
+	bar4 := colorizeBars(fourG.Bars)
+	barsStr := ""
+	if has5g && has4g {
+		barsStr = bar5 + "/" + bar4
+	} else if has5g {
+		barsStr = bar5 + "    "
+	} else {
+		barsStr = "   /" + bar4
+	}
+
+	r5 := colorizeRSRP(fiveG.RSRP)
+	r4 := colorizeRSRP(fourG.RSRP)
+	rsrpStr := ""
+	if has5g && has4g {
+		rsrpStr = r5 + "/" + r4
+	} else if has5g {
+		rsrpStr = r5 + "     "
+	} else {
+		rsrpStr = "    /" + r4
+	}
+
+	s5 := colorizeSINR(fiveG.SINR)
+	s4 := colorizeSINR(fourG.SINR)
+	sinrStr := ""
+	if has5g && has4g {
+		sinrStr = s5 + "/" + s4
+	} else if has5g {
+		sinrStr = s5 + "     "
+	} else {
+		sinrStr = "    /" + s4
 	}
 
 	// Format loss string: "0.0%"
@@ -400,20 +445,20 @@ func printRow(connType string, stats models.ConnectionStats, ping models.PingSta
 	}
 
 	// Print row with aligned columns
-	// Using %.1f for ping values ensures no leading padding, and we place one space between each
-	fmt.Printf("  %s   | %-10s | %s  | %s  | %s  | %-4d | %-4d | %-5d | %-15d | %.1f %.1f %.1f %.1f %s \n",
-		typeStr,
-		bands,
-		colorizeBars(stats.Bars),
-		colorizeRSRP(stats.RSRP),
-		colorizeSINR(stats.SINR),
-		stats.RSRQ,
-		stats.RSSI,
-		stats.CID,
-		towerID,
+	fmt.Printf(" %-11s | %s | %s | %s | %-9s | %-9s | %-11s | %-17s | %.1f %.1f %.1f %.1f %s \n",
+		bandsStr,
+		barsStr,
+		rsrpStr,
+		sinrStr,
+		combineInts(fiveG.RSRQ, fourG.RSRQ, has5g, has4g),
+		combineInts(fiveG.RSSI, fourG.RSSI, has5g, has4g),
+		combineInts(fiveG.CID, fourG.CID, has5g, has4g),
+		combineInts(tower5g, tower4g, has5g, has4g),
 		ping.Min, ping.Avg, ping.Max, ping.StdDev, lossStr,
 	)
 }
+
+
 
 func colorizeRSRP(val int) string {
 	s := fmt.Sprintf("%4d", val)
