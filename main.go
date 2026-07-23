@@ -150,7 +150,7 @@ func main() {
 	pg := pinger.NewPinger(cfg.PingTarget, 1*time.Second)
 	go pg.Run(ctx)
 
-	client := &http.Client{Timeout: 2 * time.Second}
+	client := &http.Client{Timeout: 5 * time.Second}
 
 	// 6. Start Web Server (Unified Mode)
 	if cfg.WebEnabled {
