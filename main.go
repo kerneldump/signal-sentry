@@ -40,6 +40,7 @@ func main() {
 	noAutoLogFlag := flag.Bool("no-auto-log", false, "Disable automatic logging to stats.log")
 	webFlag := flag.Bool("web", false, "Enable background web server (Unified Mode)")
 	webPortFlag := flag.Int("web-port", 8080, "Port for background web server")
+	silentFlag := flag.Bool("silent", false, "Suppress all standard output (errors to stderr)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Signal Sentry - T-Mobile Gateway Signal Monitor (%s)\n\n", Version)
@@ -94,6 +95,8 @@ func main() {
 			cfg.WebEnabled = *webFlag
 		case "web-port":
 			cfg.WebPort = *webPortFlag
+		case "silent":
+			cfg.Silent = *silentFlag
 		}
 	})
 
@@ -163,16 +166,15 @@ func main() {
 		
 		// If we are not in live mode, we can print a startup message.
 		// If we are in live mode, we must be quiet.
-		quiet := cfg.LiveMode
+		quiet := cfg.LiveMode || cfg.Silent
 		if !quiet {
 			fmt.Printf("Starting background web server on port %d (reading %s)...\n", cfg.WebPort, inputLog)
 		}
 
 		go func() {
 			if err := web.Run(cfg.WebPort, inputLog, quiet); err != nil {
-				// If quiet, we can't really log this without breaking TUI. 
-				// Maybe write to a file? For now, we swallow the error in TUI mode.
-				if !quiet {
+				// If live mode, we can't really log this without breaking TUI. 
+				if !cfg.LiveMode {
 					fmt.Fprintf(os.Stderr, "Web server error: %v\n", err)
 				}
 			}
@@ -283,7 +285,9 @@ func runLegacyLoop(cfg *config.Config, client *http.Client, pg *pinger.Pinger, l
 	for {
 		gatewayData, err := gateway.FetchStats(client, cfg.RouterURL)
 		if err != nil {
-			fmt.Printf("Error fetching stats: %v\n", err)
+			if !cfg.Silent {
+				fmt.Fprintf(os.Stderr, "Error fetching stats: %v\n", err)
+			}
 			time.Sleep(refreshDuration)
 			continue
 		}
@@ -301,17 +305,21 @@ func runLegacyLoop(cfg *config.Config, client *http.Client, pg *pinger.Pinger, l
 		}
 
 		if firstRun {
-			printDeviceInfo(data.Gateway.Device)
-			printLegend()
+			if !cfg.Silent {
+				printDeviceInfo(data.Gateway.Device)
+				printLegend()
+			}
 			firstRun = false
 		}
 
-		if linesPrinted%headerInterval == 0 {
-			printHeader()
-		}
+		if !cfg.Silent {
+			if linesPrinted%headerInterval == 0 {
+				printHeader()
+			}
 
-		printRow(data.Gateway.Signal.FiveG, data.Gateway.Signal.FourG, data.Ping)
-		linesPrinted++
+			printRow(data.Gateway.Signal.FiveG, data.Gateway.Signal.FourG, data.Ping)
+			linesPrinted++
+		}
 		time.Sleep(refreshDuration)
 	}
 }

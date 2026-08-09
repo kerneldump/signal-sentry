@@ -17,6 +17,7 @@ type Config struct {
 	DisableAutoLog  bool   `json:"disable_auto_log"` // Disables the always-on stats.log
 	WebEnabled      bool   `json:"web_enabled"`      // Unified Run Mode
 	WebPort         int    `json:"web_port"`         // Unified Run Mode
+	Silent          bool   `json:"silent"`           // Suppress CLI output
 }
 
 // DefaultConfig returns a configuration with sensible defaults.
